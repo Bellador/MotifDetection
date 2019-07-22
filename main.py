@@ -110,7 +110,7 @@ if __name__ == '__main__':
     '''
     SIFT_params = {
         'algorithm': 'SIFT',
-        'lowe_ratio': 0.80, #0.775
+        'lowe_ratio': 0.8, #0.775
         'score_multiplier': 1000, #only applies to plotting!
         'top_matches_for_score': 40 #40, 100
     }
@@ -215,7 +215,7 @@ if __name__ == '__main__':
             print("##" * 30)
             print(f"Multi dimensional clustering of subset: {subset}")
             multi_cluster_obj = ClusterMaster(multi_clustering_params, subset_df=subset_dfs[subset],
-                                        spatial_clustering=False, used_lowe_ratio=image_similarity_params['lowe_ratio'])
+                                        spatial_clustering=False, multi_clustering_inc_coordinates=True, used_lowe_ratio=image_similarity_params['lowe_ratio'])
             subset_dfs[subset] = multi_cluster_obj.df  # is named df (not sub_df) in the class to handle both cluster methods
         '''
         6. Dumping all dataframes to pickle

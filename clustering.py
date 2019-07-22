@@ -15,12 +15,13 @@ class ClusterMaster:
     core_df_range = 17
     index_lat = 10
     index_lng = 11
-    def __init__(self, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True):
+    def __init__(self, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True, multi_clustering_inc_coordinates=False):
         print("--" * 30)
         print("Initialising Data Clustering with ClusterMaster Class")
         self.params = params_dict
         self.data_path = data_path
         self.spatial_clustering = spatial_clustering
+        self.multi_clustering_inc_coordinates = multi_clustering_inc_coordinates
         self.subset_df = subset_df
         self.df = self.read_data()
         print("--" * 30)
@@ -67,15 +68,33 @@ class ClusterMaster:
             '''
             if image similarity and tag clustering shall be performed
             the clustering input features will be defined below
+            
+            OPTION 1:
+            multi clustering with only the image similiarity matrix
             '''
-            input_features = self.df.iloc[:,  ClusterMaster.core_df_range:]
-            # input_features = pd.merge(input_coordinates, input_features, left_index=True, how='inner')
+            if not self.multi_clustering_inc_coordinates:
+                input_features = self.df.iloc[:, ClusterMaster.core_df_range:]
+                '''
+                Check for rows that consist of only Zero (0.0000) scores
+                exclude them from further clustering
+                '''
+                boolean_array_zero_vals = (input_features.nunique(axis=0) == 1)# axis 0 represents index (rows), 1 unique element, namely 0
+                input_features = input_features[~boolean_array_zero_vals]  # ~ is used to invert boolean series
             '''
-            Check for rows that consist of only Zero (0.0000) scores
-            exclude them from further clustering
+            OPTION 2:
+            multi clustering with the image similiarity matrix + again the coordinates
             '''
-            boolean_array_zero_vals = (input_features.nunique(axis=0) == 1) #axis 0 represents index (rows), 1 unique element, namely 0
-            input_features = input_features[~boolean_array_zero_vals] # ~ is used to invert boolean series
+            if self.multi_clustering_inc_coordinates:
+                input_image_similiarity_matrix = self.df.iloc[:, ClusterMaster.core_df_range:]
+                input_coordinates = self.df.loc[:, ['lat', 'lng']]
+                input_features_ = input_image_similiarity_matrix.join(input_coordinates, how='left')
+                '''
+                Check for rows that consist of only Zero (0.0000) scores
+                exclude them from further clustering
+                '''
+                boolean_array_zero_vals = (input_image_similiarity_matrix.nunique(axis=0) == 1)  # axis 0 represents index (rows), 1 unique element, namely 0
+                input_features = input_features_[~boolean_array_zero_vals]  # ~ is used to invert boolean series
+                print("")
 
         if input_features.shape[0] == 0 or input_features.shape[1] == 0:
             if self.spatial_clustering:
@@ -99,6 +118,7 @@ class ClusterMaster:
                 self.df.loc[:, 'spatial_cluster_label'] = pd.Series(clusters_labels, index=self.df.index)
             else:
                 self.df.loc[:, 'multi_cluster_label'] = pd.Series(boolean_array_zero_vals, index=self.df.index)
+
                 # assumption that the cluster labels are still in the same order as the df -> proven true
                 index_c = 0
                 for i, v in self.df.iterrows():
