@@ -110,7 +110,7 @@ if __name__ == '__main__':
     '''
     SIFT_params = {
         'algorithm': 'SIFT',
-        'lowe_ratio': 0.7, #0.775
+        'lowe_ratio': 0.8, #0.775
         'score_multiplier': 1000, #only applies to plotting!
         'top_matches_for_score': 40 #40, 100
     }
