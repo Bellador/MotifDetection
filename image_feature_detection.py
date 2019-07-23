@@ -155,7 +155,7 @@ class ImageSimilarityAnalysis:
                     if len(matches) == 0:
                         df_similiarity.set_value(row, col, 0)
                     else:
-                        for m, n in matches:
+                        for m, n in matches[:50]:
                             if m.distance < self.lowe_ratio * n.distance:
                                 similar_regions.append([m])
                         # similar_regions = [region for region in sorted([match.distance for match in matches], key=lambda x: x)[:self.top_matches_for_score] if region <= threshold]
@@ -172,6 +172,7 @@ class ImageSimilarityAnalysis:
                          between two images
                         '''
                         score = len(similar_regions) #/ self.top_matches_for_score
+                        # score = len(similar_regions) / len(matches)
 
                         df_similiarity.set_value(row, col, score)
 

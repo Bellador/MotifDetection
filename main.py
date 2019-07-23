@@ -68,7 +68,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params):
 
             for id in v:
                 img_path = os.path.join(project_path, f'images_{project_name}', str(id) + '.jpg').replace('\\', '/')
-                f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"></li>\n')
+                f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
 
             f.write(f'</ul>\n')
         f.write("</body>\n")
@@ -87,8 +87,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 20,
-        'min_samples': 20
+        'min_cluster_size': 5, #20
+        'min_samples': 5 #20
     }
 
     cluster_params_HDBSCAN_multi = {
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     ORB_params = {
         'algorithm': 'ORB',
-        'lowe_ratio': 0.7,
+        'lowe_ratio': 0.8,
         'score_multiplier': 1000,
         'top_matches_for_score': 100
     }
@@ -157,8 +157,9 @@ if __name__ == '__main__':
         bbox_wildkirchli = ['9.413564,47.282421,9.415497,47.285627']
         bbox_small = ['9.414564,47.284421,9.415497,47.285627']
         bbox_big = ['9.313564,47.282421,9.415497,47.285627']
+        bbox_bridge_scotland = ['-6.175232,57.289046,-6.171761,57.290533']
 
-        # flickr_obj = FlickrQuerier(project_name, bbox=bbox_wildkirchli)
+        # flickr_obj = FlickrQuerier(project_name, bbox=bbox_bridge_scotland)
         # flickr_metadata_path = flickr_obj.csv_output_path
         '''
         2. Set desired Cluster algorithm and its parameters
