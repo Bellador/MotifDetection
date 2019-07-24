@@ -224,7 +224,7 @@ if __name__ == '__main__':
         for subset in subset_dfs:
             print("##" * 30)
             print(f"Network analysis of subset: {subset}")
-            net_analysis = NetworkAnalyser(subset)
+            net_analysis = NetworkAnalyser(subset_dfs[subset])
             subset_dfs[subset] = net_analysis.new_dataframe
         '''
         6. Dumping all dataframes to pickle
