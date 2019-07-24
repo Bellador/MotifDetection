@@ -1,6 +1,7 @@
 from query_flickr_api import FlickrQuerier
 from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalysis
+from network_analysis import NetworkAnalyser
 import os
 import warnings
 import datetime
@@ -87,8 +88,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 5, #20
-        'min_samples': 5 #20
+        'min_cluster_size': 20, #20
+        'min_samples': 20 #20
     }
 
     cluster_params_HDBSCAN_multi = {
@@ -110,29 +111,22 @@ if __name__ == '__main__':
     '''
     SIFT_params = {
         'algorithm': 'SIFT',
-        'lowe_ratio': 0.8, #0.775
-        'score_multiplier': 1000, #only applies to plotting!
-        'top_matches_for_score': 40 #40, 100
+        'lowe_ratio': 0.7, #0.775
     }
 
     SURF_params = {
         'algorithm': 'SURF',
         'lowe_ratio': 0.7,
-        'score_multiplier': 100,
-        'top_matches_for_score': 100
     }
 
     ORB_params = {
         'algorithm': 'ORB',
-        'lowe_ratio': 0.8,
-        'score_multiplier': 1000,
-        'top_matches_for_score': 100
+        'lowe_ratio': 0.7,
     }
 
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
-
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -208,16 +202,30 @@ if __name__ == '__main__':
         '''
         for subset in subset_dfs:
             pass
+
+
+        #############!!!!!DEBRICATED!!!!!########################################################
+        # '''
+        # 5. second layer Clusering
+        # with image similarity and tag frequency input features
+        # '''
+        # for subset in subset_dfs:
+        #     print("##" * 30)
+        #     print(f"Multi dimensional clustering of subset: {subset}")
+        #     multi_cluster_obj = ClusterMaster(multi_clustering_params, subset_df=subset_dfs[subset],
+        #                                 spatial_clustering=False, multi_clustering_inc_coordinates=True, used_lowe_ratio=image_similarity_params['lowe_ratio'])
+        #     subset_dfs[subset] = multi_cluster_obj.df  # is named df (not sub_df) in the class to handle both cluster methods
+
         '''
-        5. second layer Clusering
-        with image similarity and tag frequency input features
+        5. Network analysis
+        Finding and linking scores above a given threshold to clusters
+        which shall represent possible motives in the spatial clusters
         '''
         for subset in subset_dfs:
             print("##" * 30)
-            print(f"Multi dimensional clustering of subset: {subset}")
-            multi_cluster_obj = ClusterMaster(multi_clustering_params, subset_df=subset_dfs[subset],
-                                        spatial_clustering=False, multi_clustering_inc_coordinates=True, used_lowe_ratio=image_similarity_params['lowe_ratio'])
-            subset_dfs[subset] = multi_cluster_obj.df  # is named df (not sub_df) in the class to handle both cluster methods
+            print(f"Network analysis of subset: {subset}")
+            net_analysis = NetworkAnalyser(subset)
+            subset_dfs[subset] = net_analysis.new_dataframe
         '''
         6. Dumping all dataframes to pickle
         in the project folder

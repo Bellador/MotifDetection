@@ -23,9 +23,6 @@ class ImageSimilarityAnalysis:
         self.images_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name, f'images_{self.project_name}')
         self.algorithm = self.algorithm_params['algorithm']
         self.lowe_ratio = self.algorithm_params['lowe_ratio']
-        self.score_multiplier = self.algorithm_params['score_multiplier']
-        self.top_matches_for_score = self.algorithm_params['top_matches_for_score']
-
 
         print("--" * 30)
         print("Initialising Computer Vision with ImageSimilarityAnalysis Class")
@@ -35,10 +32,9 @@ class ImageSimilarityAnalysis:
         self.compute_keypoints()
         print("--" * 30)
         print("Compute image keypoints - done.")
-        self.df, self.df_similarity = self.match_keypoints(top_matches=20, lowe_ratio=self.lowe_ratio, pickle_similarity_matrix=pickle)
+        self.df, self.df_similarity = self.match_keypoints(lowe_ratio=self.lowe_ratio, pickle_similarity_matrix=pickle)
         print("--" * 30)
         print("Compute image similarity dataframe - done.")
-
 
         end = time.time()
         print(f"Duration: {end - start} seconds")
@@ -110,7 +106,7 @@ class ImageSimilarityAnalysis:
             self.feature_dict[obj]['ds'] = descriptors
 
 
-    def match_keypoints(self, top_matches=20, lowe_ratio=0.8, pickle_similarity_matrix=True):
+    def match_keypoints(self, lowe_ratio=0.8, pickle_similarity_matrix=True):
         '''
         Brute Force
         Matching between the different images
@@ -118,30 +114,22 @@ class ImageSimilarityAnalysis:
         of every image (n) with the set in a 2D matrix of n^2 entries
         '''
         df_pickle_path = "C:/Users/mhartman/Documents/100mDataset/"
-        top_considered_matches = 20
+        self.lowe_ratio = lowe_ratio
         #one to store the matches, the other for the later computed similarity scores
         df = pd.DataFrame(columns=self.image_objects.keys(), index=self.image_objects.keys())
         df_similiarity = pd.DataFrame(columns=self.image_objects.keys(), index=self.image_objects.keys())
-         # = pd.DataFrame(columns=image_objects.keys(), index=image_objects.keys())
         #normalising function dependant on used algorithm - NORM_HAMMING good for orb
         bf = cv2.BFMatcher() #cv2.NORM_L1, crossCheck=True
         #store already sorted match results in corresponding matrix cells
-
         indexes = df.index.values
         columns = df.columns.values
         '''
         here reduce the redundancy
         by avoiding to check the same comparisons twice                
         '''
-        # [df.set_value(index, column, bf.knnMatch(self.feature_dict[index]['ds'], self.feature_dict[column]['ds']))
-        #         for check1, index in enumerate(indexes)
-        #             for check2, column in enumerate(columns) if check2 >= check1 and check2 != check1]
-
-
-        for check1, index in enumerate(indexes):
-            for check2, column in enumerate(columns):
-                if check2 >= check1 and check2 != check1:
-                    df.set_value(index, column, bf.knnMatch(self.feature_dict[index]['ds'], self.feature_dict[column]['ds'], k=2))
+        [df.set_value(index, column, bf.knnMatch(self.feature_dict[index]['ds'], self.feature_dict[column]['ds'], k=2))
+         for check1, index in enumerate(indexes)
+            for check2, column in enumerate(columns) if check2 >= check1 and check2 != check1]
 
         print("Populated dataframe with image matches - done.")
         recorded_match_lengths = []
@@ -155,24 +143,16 @@ class ImageSimilarityAnalysis:
                     if len(matches) == 0:
                         df_similiarity.set_value(row, col, 0)
                     else:
-                        for m, n in matches[:50]:
+                        for m, n in matches:
                             if m.distance < self.lowe_ratio * n.distance:
                                 similar_regions.append([m])
-                        # similar_regions = [region for region in sorted([match.distance for match in matches], key=lambda x: x)[:self.top_matches_for_score] if region <= threshold]
                         '''
                         Following:
                         Score based on similar regions compared to match length:
                         range of match length was witnessed to be between 150 and 1300 (~factor 10)
                         thats why new approach
                         '''
-                        # score = len(similar_regions) / len(matches)
-                        '''
-                        New:
-                        Score based on similar regions among the best, top 100 matches
-                         between two images
-                        '''
-                        score = len(similar_regions) #/ self.top_matches_for_score
-                        # score = len(similar_regions) / len(matches)
+                        score = len(similar_regions)
 
                         df_similiarity.set_value(row, col, score)
 
@@ -189,15 +169,15 @@ class ImageSimilarityAnalysis:
         All values are needed to form the individual image similarity features for each media object!
         '''
         [df_similiarity.set_value(index, column, df_similiarity.loc[column, index])
-             for check1, index in enumerate(indexes)
-                for check2, column in enumerate(columns) if check2 < check1 and check1 != 0]
+         for check1, index in enumerate(indexes)
+            for check2, column in enumerate(columns) if check2 < check1 and check1 != 0]
         '''
         Fill in similarity score of 0
         for all comparisons between the same images -> the diagonal
         '''
         [df_similiarity.set_value(index, column, ImageSimilarityAnalysis.score_same_image)
-             for check1, index in enumerate(indexes)
-                for check2, column in enumerate(columns) if check2 == check1]
+         for check1, index in enumerate(indexes)
+            for check2, column in enumerate(columns) if check2 == check1]
 
         if pickle_similarity_matrix:
             print("Pickling similarity dataframe...")
@@ -347,7 +327,7 @@ class ImageSimilarityAnalysis:
                         score = 0
                     #include only positiv scores
                     if score != 0:
-                        score_tuplelist_motive.append((index, column, score * self.score_multiplier))
+                        score_tuplelist_motive.append((index, column, score))
 
             for index in noise_indexes:
                 for column in noise_columns:
@@ -356,7 +336,7 @@ class ImageSimilarityAnalysis:
                         score = 0
                     #include only positiv scores
                     if score != 0:
-                        score_tuplelist_noise.append((index, column, score * self.score_multiplier))
+                        score_tuplelist_noise.append((index, column, score))
 
             #sort scores
             score_tuplelist_motive = sorted(score_tuplelist_motive, reverse=True, key=lambda x: x[2])
@@ -381,7 +361,7 @@ class ImageSimilarityAnalysis:
             ax.bar(ind_motive, scores_motive, label='Motives') #[:top_comparisons]
             ax.bar(ind_noise, scores_noise, label='Noise')
 
-            ax.set_ylabel(f'score * {self.score_multiplier}')
+            ax.set_ylabel(f'score')
             ax.set_xlabel(f'image comparison variations')
             ax.set_title(f'{self.algorithm}: calculated image comparison scores, threshold {self.threshold}')
             ax.set_xticks(ind_motive)
