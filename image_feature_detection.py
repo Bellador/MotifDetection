@@ -10,7 +10,7 @@ import time
 import urllib.request
 import ssl
 
-class ImageSimilarityAnalysis:
+class ImageSimilarityAnalyser:
     score_same_image = 0
 
     def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False):
@@ -70,7 +70,7 @@ class ImageSimilarityAnalysis:
             img_urls = self.subset_df.loc[:, 'download_url']
             nr_images = img_urls.shape[0]
             not_found = 0
-            for counter, (img_id, url) in enumerate(zip(ids, img_urls)):
+            for counter, (img_id, url) in enumerate(zip(ids, img_urls), 1):
                 try:
                     img = url_to_image(url)
                     # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
@@ -199,7 +199,7 @@ class ImageSimilarityAnalysis:
         Fill in similarity score of 0
         for all comparisons between the same images -> the diagonal
         '''
-        [df_similiarity.set_value(index, column, ImageSimilarityAnalysis.score_same_image)
+        [df_similiarity.set_value(index, column, ImageSimilarityAnalyser.score_same_image)
          for check1, index in enumerate(indexes)
             for check2, column in enumerate(columns) if check2 == check1]
 

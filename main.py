@@ -1,12 +1,43 @@
 from query_flickr_api import FlickrQuerier
 from db_querier import DbQuerier
 from clustering import ClusterMaster
-from image_feature_detection import ImageSimilarityAnalysis
+from image_feature_detection import ImageSimilarityAnalyser
 from network_analysis import NetworkAnalyser
+from random import randint
 import warnings
 import datetime
 import os
 import sys
+
+def filter_authors(label, subset):
+    '''
+    Retaining only one media object per unique author and SUBCLUSTER
+
+    1. iterate over subclusters
+    '''
+    rows_before_filter = len(subset.index.values)
+    # radomly choose to either keep the first or last record
+    rand = randint(0, 1)
+    if rand == 0:
+        to_keep = 'first'
+    elif rand == 1:
+        to_keep = 'last'
+    # postgres column_name = user_nsid
+    if data_source == 1:
+        subset = subset.drop_duplicates(subset='user_nsid', keep=to_keep)
+    # flickrAPI colum_name = author_id
+    elif data_source == 2:
+        subset = subset.drop_duplicates(subset='author_id', keep=to_keep)
+
+    rows_after_filter = len(subset.index.values)
+    print("**" * 30)
+    print(f"Filter result Subset {label}:")
+    print(f"Entries before: {rows_before_filter}")
+    print(f"Entries after: {rows_after_filter}")
+    print(
+        f"Difference: {rows_before_filter - rows_after_filter}; -{(rows_before_filter - rows_after_filter) / rows_before_filter * 100}%")
+    print("**" * 30)
+    return subset
 
 def pickle_dataframes(index, dataframe, cluster_params, image_params):
     try:
@@ -189,6 +220,7 @@ if __name__ == '__main__':
     2. Flickr API
     '''
     data_source = 1
+    filter_authors = True
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
@@ -231,8 +263,8 @@ if __name__ == '__main__':
         '''
         # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/bridge/metadata_bridge_2019_07_23.csv"
         # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli/metadata_wildkirchli_2019_07_12.csv"
-        cluster_obj = ClusterMaster(spatial_clustering_params, data_path=data_path,
-                                    spatial_clustering=True)  # flickr_metadata_path
+        cluster_obj = ClusterMaster(data_source, spatial_clustering_params, data_path=data_path,
+                                    spatial_clustering=True, handle_authors=True)  # flickr_metadata_path
         original_db_size = cluster_obj.original_df_size
         cluster_df = cluster_obj.df
         unique_cluster_lables = cluster_obj.unique_labels
@@ -249,6 +281,14 @@ if __name__ == '__main__':
                 subset_dataframe = cluster_df[boolean_array]
                 subset_dfs[f'cluster_{cluster_label}'] = subset_dataframe
         '''
+        Conditionally apply
+        Author filtering
+        '''
+        if filter_authors:
+            for subset in subset_dfs:
+                print("Filtering authors...")
+                subset_dfs[subset] = filter_authors(subset, subset_dfs[subset])
+        '''
         3. Create image similarity matrix for
         all media objects inside a spatial cluster
         and add the feature matrix to the cluster_dataframe
@@ -260,7 +300,7 @@ if __name__ == '__main__':
         for subset in subset_dfs:
             print("##" * 30)
             print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {subset}")
-            cv_obj = ImageSimilarityAnalysis(project_name, data_source, image_similarity_params,
+            cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params,
                                              subset_dfs[subset])
             subset_dfs[subset] = cv_obj.subset_df
             index += 1

@@ -4,29 +4,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import hdbscan
+from random import randint
 
 class ClusterMaster:
-    '''
-    This variable is important to select the new image similarity and tag frequency columns
-    for the second, non-spatial clustering.
-    This value is strongly dependant on the imported dataframe and the columns that already exist
-    (in prospect of querying the database instead of FlickrAPI and the metadata .csv import!)
-    '''
-    index_lat = 10
-    index_lng = 11
-    def __init__(self, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True, multi_clustering_inc_coordinates=False):
+
+    def __init__(self, data_source, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True, multi_clustering_inc_coordinates=False, handle_authors=False):
+        #handle_authors retains only one media object / image per unique author and spatial cluster
+        #accounting for the dominant authors and subsequent snapshots (often bulk uploads) of an object
         print("--" * 30)
         print("Initialising Data Clustering with ClusterMaster Class")
+        self.data_source = data_source
         self.params = params_dict
+        self.used_lowe_ratio = used_lowe_ratio
         self.data_path = data_path
         self.spatial_clustering = spatial_clustering
         self.multi_clustering_inc_coordinates = multi_clustering_inc_coordinates
         self.subset_df = subset_df
+        self.handle_authors = handle_authors
+
         self.df = self.read_data()
         print("--" * 30)
         print("Reading metadata dataframe - done.")
-        self.used_lowe_ratio = used_lowe_ratio
         self.unique_labels = self.clustering()
+        #MOVED TO MAIN.PY
+        # if self.handle_authors:
+        #     print("Filtering authors...")
+        #     self.filter_authors()
         print("--" * 30)
         print("Clustering process - done.")
         print("--" * 30)
