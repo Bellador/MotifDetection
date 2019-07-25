@@ -7,16 +7,16 @@ import datetime
 import math
 import re
 import time
-
+import urllib.request
+import ssl
 
 class ImageSimilarityAnalysis:
     score_same_image = 0
-    # score_same_image = 1
-    core_df_range = 17
 
-    def __init__(self, project_name, algorithm_params, subset_df, pickle=False):
+    def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False):
         start = time.time()
         self.project_name = project_name
+        self.data_source = data_source
         self.algorithm_params = algorithm_params
         self.subset_df = subset_df
         self.project_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name)
@@ -26,7 +26,7 @@ class ImageSimilarityAnalysis:
 
         print("--" * 30)
         print("Initialising Computer Vision with ImageSimilarityAnalysis Class")
-        self.image_objects, self.feature_dict, self.nr_files = self.file_loader()
+        self.image_objects, self.feature_dict, self.nr_images = self.file_loader()
         print("--" * 30)
         print("Load images - done.")
         self.compute_keypoints()
@@ -40,7 +40,7 @@ class ImageSimilarityAnalysis:
         print(f"Duration: {end - start} seconds")
 
         with open(path_performance_log, 'a') as log:
-            log.write(f"{self.algorithm}, processed files: {self.nr_files}, duration: {end-start}\n")
+            log.write(f"{self.algorithm}, processed files: {self.nr_images}, duration: {end-start}\n")
 
         # self.visualise_matches('img9', 'img10', top_matches=20)
         # self.visualise_matches('img8', 'img9', top_matches=20)
@@ -48,37 +48,61 @@ class ImageSimilarityAnalysis:
         print("Adding new features to dataframe")
         self.add_features()
         # self.plot_results(top_comparisons=20, top_matches=20)
-
         print("--" * 30)
         print("--" * 30)
         print("ImageSimilarityAnalysis Class - done")
 
     def file_loader(self):
+        def url_to_image(url):
+            # download the image, convert it to a NumPy array, and then read
+            # it into OpenCV format
+            resp = urllib.request.urlopen(url, context=ssl._create_unverified_context())
+            image = np.asarray(bytearray(resp.read()), dtype="uint8")
+            image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+            # return the image
+            return image
         #load image as grayscale since following 3 algoithms ignore RGB information
         image_objects = {}
         feature_dict = {}
         filename_tracker = {}
+        if self.data_source == 1:
+            ids = self.subset_df.index.values
+            img_urls = self.subset_df.loc[:, 'download_url']
+            nr_images = img_urls.shape[0]
+            not_found = 0
+            for counter, (img_id, url) in enumerate(zip(ids, img_urls)):
+                try:
+                    img = url_to_image(url)
+                    # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+                    image_objects[img_id] = img
+                    feature_dict[img_id] = {}
+                    print(f'\r{counter} of {nr_images} images', end='')
+                except Exception as e:
+                    not_found += 1
+                    # print(f"image {img_id} not found")
+            print(f"\nNot found images: {not_found}")
 
-        files = [os.path.join(self.images_path, file) for file in os.listdir(self.images_path) if os.path.isfile(os.path.join(self.images_path, file))]
-        '''
-        load images
-        ONLY of the specific subset!
-        '''
-        needed_ids = self.subset_df.index.values
-        print(f"Number of images to process: {len(needed_ids)}")
-        for index, file in enumerate(files):
-            pattern = r"([\d]*)\.jpg$"
-            file_id = int(re.search(pattern, file).group(1))
-            if file_id in needed_ids:
-                image_objects[file_id] = cv2.imread(file, cv2.IMREAD_GRAYSCALE)
-                feature_dict[file_id] = {}
-
+        elif self.data_source == 2:
+            images = [os.path.join(self.images_path, file) for file in os.listdir(self.images_path) if os.path.isfile(os.path.join(self.images_path, file))]
+            nr_images = len(images)
+            '''
+            load images
+            ONLY of the specific subset!
+            '''
+            needed_ids = self.subset_df.index.values
+            print(f"Number of images to process: {len(needed_ids)}")
+            for index, img in enumerate(images):
+                pattern = r"([\d]*)\.jpg$"
+                img_id = int(re.search(pattern, img).group(1))
+                if img_id in needed_ids:
+                    image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+                    feature_dict[img_id] = {}
         '''
         creating already the required keys with empty dict's in the feature dictionary
         which will store the corresponding keypoints and descriptors
         '''
         # print(f"{index+1} images read.")
-        return image_objects, feature_dict, len(files)
+        return image_objects, feature_dict, nr_images
 
     def compute_keypoints(self):
         '''
@@ -372,10 +396,12 @@ class ImageSimilarityAnalysis:
         plt.show()
 
     def add_features(self):
-        # 1. add the needed amount of new columns according
-        # to the length of the similarity matrix
-        # for index, row in self.df_similarity.iterrows():
-
+        '''
+        1. add the needed amount of new columns according
+        to the length of the similarity matrix
+        then add the scores in the appropriate fields
+        :return:
+        '''
         _columns = self.df_similarity.columns.values
         for index, row in self.df_similarity.iterrows():
             for column, element in zip(_columns, row):
@@ -393,7 +419,10 @@ class ImageSimilarityAnalysis:
         #Testing what happens if no reasign but with inplace=True.
         #fillna() doesn't work as intendend as soon as one enters a list of rows AND columns
 
-        #isnull checks for NaN, None -> missing values. Zeros will NOT be removed!
+        '''
+        isnull checks for NaN, None -> missing values. Zeros will NOT be removed!
+        Only checks last column since that is enough, if the value is NaN its image does not exist
+        '''
         boolean_array_no_nan_rows = self.subset_df.iloc[:, -1].notnull()
         self.subset_df = self.subset_df[boolean_array_no_nan_rows]
 

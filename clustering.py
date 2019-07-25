@@ -12,7 +12,6 @@ class ClusterMaster:
     This value is strongly dependant on the imported dataframe and the columns that already exist
     (in prospect of querying the database instead of FlickrAPI and the metadata .csv import!)
     '''
-    core_df_range = 17
     index_lat = 10
     index_lng = 11
     def __init__(self, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True, multi_clustering_inc_coordinates=False):
@@ -35,6 +34,7 @@ class ClusterMaster:
     def read_data(self):
         if self.spatial_clustering:
             dataframe = pd.read_csv(self.data_path, delimiter=';', index_col='photo_id')
+            self.original_df_size = dataframe.shape
         else:
             dataframe = self.subset_df
         print(f"Dataframe shape: {dataframe.shape}")
@@ -48,7 +48,6 @@ class ClusterMaster:
             self.min_cluster_size = self.params['min_cluster_size']
             self.min_samples = self.params['min_samples']
             self.clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_size, min_samples=self.min_samples)
-
 
         elif self.params['algorithm'] == 'DBSCAN':
             self.eps = self.params['eps']
@@ -73,7 +72,7 @@ class ClusterMaster:
             multi clustering with only the image similiarity matrix
             '''
             if not self.multi_clustering_inc_coordinates:
-                input_features = self.df.iloc[:, ClusterMaster.core_df_range:]
+                input_features = self.df.iloc[:, self.original_df_size[1]:]
                 '''
                 Check for rows that consist of only Zero (0.0000) scores
                 exclude them from further clustering
@@ -85,7 +84,7 @@ class ClusterMaster:
             multi clustering with the image similiarity matrix + again the coordinates
             '''
             if self.multi_clustering_inc_coordinates:
-                input_image_similiarity_matrix = self.df.iloc[:, ClusterMaster.core_df_range:]
+                input_image_similiarity_matrix = self.df.iloc[:, self.original_df_size[1]:]
                 input_coordinates = self.df.loc[:, ['lat', 'lng']]
                 input_features_ = input_image_similiarity_matrix.join(input_coordinates, how='left')
                 '''
@@ -101,7 +100,6 @@ class ClusterMaster:
                 self.df.loc[:, 'spatial_cluster_label'] = -1
             else:
                 self.df.loc[:, 'multi_cluster_label'] = -1
-
             print("No more input features left! No Clusters")
             return None
 

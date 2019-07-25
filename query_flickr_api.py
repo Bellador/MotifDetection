@@ -78,7 +78,6 @@ class FlickrQuerier:
                     continue
                 elif re.match(r'<SECRET>', line):
                     secret_found = True
-
         return api_key, api_secret
 
     def flickr_search(self):
@@ -136,13 +135,9 @@ class FlickrQuerier:
                 # Medium 640 image size url
                 url_medium = results['sizes']['size'][6]['source']
                 # urllib.request.urlretrieve(url_medium, path) # context=ssl._create_unverified_context()
-
                 resource = urllib.request.urlopen(url_medium, context=ssl._create_unverified_context())
-
                 with open(self.image_path + '/' + f"{id}.jpg", 'wb') as image:
                     image.write(resource.read())
-
-
                 print(f"retrieved {index} of {len(ids)} images")
 
             except Exception as e:
@@ -180,7 +175,6 @@ class FlickrQuerier:
         with open(self.csv_output_path, 'w', encoding='utf-8') as f:
             for index, id in enumerate(self.unique_ids):
                 results = json.loads(self.flickr.photos.getInfo(photo_id=id).decode('utf-8'))
-
                 #get the top level
                 try:
                     results = results['photo']
@@ -229,36 +223,34 @@ class FlickrQuerier:
                 title = remove_non_ascii(results['title']['_content'].replace(csv_separator, ''))
 
                 data = {
-                'author_id': results['owner']['nsid'].replace(csv_separator, ''),
-                'author_origin': results['owner']['location'].replace(csv_separator, ''),
-                'title': title,
-                'description': description,
-                'upload_date': results['dates']['posted'].replace(csv_separator, ''),
-                'taken_date': results['dates']['taken'].replace(csv_separator, ''),
-                'views': results['views'].replace(csv_separator, ''),
-                'url': results['urls']['url'][0]['_content'].replace(csv_separator, ''),
-                'tags':  tag_string,
+                    'author_id': results['owner']['nsid'].replace(csv_separator, ''),
+                    'author_origin': results['owner']['location'].replace(csv_separator, ''),
+                    'title': title,
+                    'description': description,
+                    'upload_date': results['dates']['posted'].replace(csv_separator, ''),
+                    'taken_date': results['dates']['taken'].replace(csv_separator, ''),
+                    'views': results['views'].replace(csv_separator, ''),
+                    'url': results['urls']['url'][0]['_content'].replace(csv_separator, ''),
+                    'tags':  tag_string,
 
-                #location information
+                    #location information
 
-                'lat': results['location']['latitude'].replace(csv_separator, ''),
-                'lng': results['location']['longitude'].replace(csv_separator, ''),
-                'accuracy': results['location']['accuracy'].replace(csv_separator, ''),
-                'locality': locality,
-                'county': county,
-                'region': region,
-                'country': country
+                    'lat': results['location']['latitude'].replace(csv_separator, ''),
+                    'lng': results['location']['longitude'].replace(csv_separator, ''),
+                    'accuracy': results['location']['accuracy'].replace(csv_separator, ''),
+                    'locality': locality,
+                    'county': county,
+                    'region': region,
+                    'country': country
                 }
 
                 if index == 0:
                     header = create_header(data)
                     f.write(f"{header}\n")
-
                 if index % 50 == 0 and index != 0:
                     print(f"Line {index} processed")
 
                 line = create_line(id, data)
                 f.write(f"{line}\n")
 
-                # del data
         print(f"Created output file: {self.csv_output_path}")

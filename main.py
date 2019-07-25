@@ -1,10 +1,12 @@
 from query_flickr_api import FlickrQuerier
+from db_querier import DbQuerier
 from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalysis
 from network_analysis import NetworkAnalyser
-import os
 import warnings
 import datetime
+import os
+import sys
 
 def pickle_dataframes(index, dataframe, cluster_params, image_params):
     try:
@@ -41,44 +43,103 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params):
     file_name = '{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.html'.format(cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                          image_params['algorithm'], image_params['lowe_ratio'], index,
                                          datetime.datetime.now())
+    #Database
+    if data_source == 1:
+        with open(os.path.join(html_path, file_name), 'w') as f:
+            f.write("<!DOCTYPE html>\n")
+            f.write("<hmtl>\n")
+            f.write("<head>\n")
+            f.write(f"<title>Multi Cluster {index}</title>\n")
+            f.write("</head>\n")
+            f.write("<body>\n")
+            f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
+            # get the amount of cluster
+            cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
+            n_clusters = sum([1 for c in cluster_labels if c != -1])
+            cluster_dict = {}
 
-    with open(os.path.join(html_path, file_name), 'w') as f:
-        f.write("<!DOCTYPE html>\n")
-        f.write("<hmtl>\n")
-        f.write("<head>\n")
-        f.write(f"<title>Multi Cluster {index}</title>\n")
-        f.write("</head>\n")
-        f.write("<body>\n")
-        f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
-        # get the amount of cluster
-        cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
-        n_clusters = sum([1 for c in cluster_labels if c != -1])
+            for label in cluster_labels:
+                cluster_dict[label] = []
 
-        cluster_dict = {}
-        for label in cluster_labels:
-            cluster_dict[label] = []
+            # append media objects to correct cluster
+            for i, row in dataframe.iterrows():
+                image_url = row['download_url']
+                cluster_label = row['multi_cluster_label']
+                cluster_dict[cluster_label].append((i, image_url))
 
-        # append media objects to correct cluster
-        for i, row in dataframe.iterrows():
-            cluster_label = row['multi_cluster_label']
-            cluster_dict[cluster_label].append(i)
+            for counter, (k, v) in enumerate(cluster_dict.items()):
+                f.write(f'<h2>Cluster {k}</h2>\n')
+                f.write(f'<ul>\n')
 
-        for counter, (k, v) in enumerate(cluster_dict.items()):
-            f.write(f'<h2>Cluster {k}</h2>\n')
-            f.write(f'<ul>\n')
+                for tuple_ in v:
+                    id = tuple_[0]
+                    img_path = tuple_[1]
+                    f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
 
-            for id in v:
-                img_path = os.path.join(project_path, f'images_{project_name}', str(id) + '.jpg').replace('\\', '/')
-                f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
+                f.write(f'</ul>\n')
+            f.write("</body>\n")
+            f.write("</html>\n")
+    #FlickrAPI
+    elif data_source == 2:
+        with open(os.path.join(html_path, file_name), 'w') as f:
+            f.write("<!DOCTYPE html>\n")
+            f.write("<hmtl>\n")
+            f.write("<head>\n")
+            f.write(f"<title>Multi Cluster {index}</title>\n")
+            f.write("</head>\n")
+            f.write("<body>\n")
+            f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
+            # get the amount of cluster
+            cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
+            n_clusters = sum([1 for c in cluster_labels if c != -1])
 
-            f.write(f'</ul>\n')
-        f.write("</body>\n")
-        f.write("</html>\n")
+            cluster_dict = {}
+            for label in cluster_labels:
+                cluster_dict[label] = []
+
+            # append media objects to correct cluster
+            for i, row in dataframe.iterrows():
+                cluster_label = row['multi_cluster_label']
+                cluster_dict[cluster_label].append(i)
+
+            for counter, (k, v) in enumerate(cluster_dict.items()):
+                f.write(f'<h2>Cluster {k}</h2>\n')
+                f.write(f'<ul>\n')
+
+                for id in v:
+                    img_path = os.path.join(project_path, f'images_{project_name}', str(id) + '.jpg').replace('\\', '/')
+                    f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
+
+                f.write(f'</ul>\n')
+            f.write("</body>\n")
+            f.write("</html>\n")
 
     print(f"Created inspection html file {file_name} in folder {folder_name}")
 
-
 if __name__ == '__main__':
+    '''
+    Database queries:
+    
+    '''
+    eu_protected_sites = """
+    SELECT x.photo_id, x.user_nsid, x.download_url, x.lat, x.lng
+    FROM data_100m as x
+    JOIN switzerland as y
+    ON ST_WITHIN(x.geometry, y.geom)
+    WHERE x.georeferenced = 1
+    AND x.date_uploaded >= 1388534400
+    AND x.date_uploaded <= 1420070400"""
+    #unixtimestamps for 2014 - 2015
+    '''
+    Flickr API: Set bounding box (lower left & upper right corner) for the desired research 
+    area in the following way (note the quotes!):
+    bbox = ['lat_lowerleft, lng_lowerleft, lat_upperright, lng_upperright']
+    NOTE: The class already handles multiple result pages and returns all flickr entries
+    '''
+    bbox_wildkirchli = ['9.413564,47.282421,9.415497,47.285627']
+    bbox_small = ['9.414564,47.284421,9.415497,47.285627']
+    bbox_big = ['9.313564,47.282421,9.415497,47.285627']
+    bbox_bridge_scotland = ['-6.175232,57.289046,-6.171761,57.290533']
     '''
     -----
     CLUSTERING INPUT PARAMETERS
@@ -88,16 +149,14 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 20, #20
-        'min_samples': 20 #20
+        'min_cluster_size': 100, #20
+        'min_samples': 100 #20
     }
-
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
         'min_cluster_size': 2,
         'min_samples': 2
     }
-
     cluster_params_DBSCAN = {
         'algorithm': 'DBSCAN',
         'eps': 0.00015,
@@ -113,27 +172,37 @@ if __name__ == '__main__':
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7, #0.775
     }
-
     SURF_params = {
         'algorithm': 'SURF',
         'lowe_ratio': 0.7,
     }
-
     ORB_params = {
         'algorithm': 'ORB',
         'lowe_ratio': 0.7,
     }
-
+    ##############################################################
+    ############################ADJUST############################
+    ##############################################################
+    '''
+    Define data source:
+    1. PostGIS database
+    2. Flickr API
+    '''
+    data_source = 1
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
+    flickr_bbox = bbox_wildkirchli
+    db_query = eu_protected_sites
+    ################################################################
+    ################################################################
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
 
-        project_name = 'wildkirchli'
+        project_name = 'db_test_switzerland'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -142,27 +211,29 @@ if __name__ == '__main__':
         else:
             print(f"Project folder {project_name} exists already.")
         '''
-        1. Set bounding box (lower left & upper right corner) for the desired research 
-        area in the following way (note the quotes!):
-        bbox = ['lat_lowerleft, lng_lowerleft, lat_upperright, lng_upperright']
-
-        NOTE: The class already handles multiple result pages and returns all flickr entries
+        1. Loading data
+        check from which source data will be loaded
         '''
-        bbox_wildkirchli = ['9.413564,47.282421,9.415497,47.285627']
-        bbox_small = ['9.414564,47.284421,9.415497,47.285627']
-        bbox_big = ['9.313564,47.282421,9.415497,47.285627']
-        bbox_bridge_scotland = ['-6.175232,57.289046,-6.171761,57.290533']
-
-        # flickr_obj = FlickrQuerier(project_name, bbox=bbox_bridge_scotland)
-        # flickr_metadata_path = flickr_obj.csv_output_path
+        if data_source == 1:
+            print("About to import data from database...")
+            db_obj = DbQuerier(db_query, project_name)
+            data_path = db_obj.csv_output_path
+        elif data_source == 2:
+            print("About to import data from Flickr API...")
+            flickr_obj = FlickrQuerier(project_name, bbox=flickr_bbox)
+            data_path = flickr_obj.csv_output_path
+        else:
+            print("Invalid data source")
+            sys.exit(1)
         '''
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
         '''
-        test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli/metadata_wildkirchli_2019_07_12.csv"
-
-        cluster_obj = ClusterMaster(spatial_clustering_params, data_path=test_path,
+        # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/bridge/metadata_bridge_2019_07_23.csv"
+        # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli/metadata_wildkirchli_2019_07_12.csv"
+        cluster_obj = ClusterMaster(spatial_clustering_params, data_path=data_path,
                                     spatial_clustering=True)  # flickr_metadata_path
+        original_db_size = cluster_obj.original_df_size
         cluster_df = cluster_obj.df
         unique_cluster_lables = cluster_obj.unique_labels
         '''
@@ -189,7 +260,7 @@ if __name__ == '__main__':
         for subset in subset_dfs:
             print("##" * 30)
             print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {subset}")
-            cv_obj = ImageSimilarityAnalysis(project_name, image_similarity_params,
+            cv_obj = ImageSimilarityAnalysis(project_name, data_source, image_similarity_params,
                                              subset_dfs[subset])
             subset_dfs[subset] = cv_obj.subset_df
             index += 1
@@ -202,8 +273,6 @@ if __name__ == '__main__':
         '''
         for subset in subset_dfs:
             pass
-
-
         #############!!!!!DEBRICATED!!!!!########################################################
         # '''
         # 5. second layer Clusering
@@ -215,7 +284,6 @@ if __name__ == '__main__':
         #     multi_cluster_obj = ClusterMaster(multi_clustering_params, subset_df=subset_dfs[subset],
         #                                 spatial_clustering=False, multi_clustering_inc_coordinates=True, used_lowe_ratio=image_similarity_params['lowe_ratio'])
         #     subset_dfs[subset] = multi_cluster_obj.df  # is named df (not sub_df) in the class to handle both cluster methods
-
         '''
         5. Network analysis
         Finding and linking scores above a given threshold to clusters
@@ -224,14 +292,18 @@ if __name__ == '__main__':
         for subset in subset_dfs:
             print("##" * 30)
             print(f"Network analysis of subset: {subset}")
-            net_analysis = NetworkAnalyser(subset_dfs[subset])
+            net_analysis = NetworkAnalyser(subset, subset_dfs[subset])
             subset_dfs[subset] = net_analysis.new_dataframe
         '''
         6. Dumping all dataframes to pickle
         in the project folder
         '''
+        print("##" * 30)
+        print("Create output files")
         for k, subset in subset_dfs.items():
             pickle_dataframes(k, subset, multi_clustering_params, image_similarity_params)
+            print("--" * 30)
             cluster_html_inspect(k, subset, multi_clustering_params, image_similarity_params)
+            print("--" * 30)
 
         print("Finished.")
