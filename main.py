@@ -30,12 +30,19 @@ def filter_authors(label, subset):
         subset = subset.drop_duplicates(subset='author_id', keep=to_keep)
 
     rows_after_filter = len(subset.index.values)
+
+    with open(project_path + '/author_filter_log.txt', 'at') as log:
+        log.write("**" * 30 + '\n')
+        log.write(f"Entries before: {rows_before_filter}\n")
+        log.write(f"Entries after: {rows_after_filter}\n")
+        log.write(f"Difference: {rows_before_filter - rows_after_filter}; -{round((rows_before_filter - rows_after_filter) / rows_before_filter * 100, 1)}%\n")
+        log.write("**" * 30 + '\n')
+
     print("**" * 30)
     print(f"Filter result Subset {label}:")
     print(f"Entries before: {rows_before_filter}")
     print(f"Entries after: {rows_after_filter}")
-    print(
-        f"Difference: {rows_before_filter - rows_after_filter}; -{(rows_before_filter - rows_after_filter) / rows_before_filter * 100}%")
+    print(f"Difference: {rows_before_filter - rows_after_filter}; -{round((rows_before_filter - rows_after_filter) / rows_before_filter * 100, 1)}%")
     print("**" * 30)
     return subset
 
@@ -180,8 +187,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 100, #20
-        'min_samples': 100 #20
+        'min_cluster_size': 20, #20
+        'min_samples': 20 #20
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
@@ -212,29 +219,29 @@ if __name__ == '__main__':
         'lowe_ratio': 0.7,
     }
     ##############################################################
-    ############################ADJUST############################
+    ####################ADJUST#PARAMETERS#########################
     ##############################################################
     '''
     Define data source:
     1. PostGIS database
     2. Flickr API
     '''
-    data_source = 1
-    filter_authors = True
-    spatial_clustering_params = cluster_params_HDBSCAN_spatial
-    multi_clustering_params = cluster_params_HDBSCAN_multi
-    image_similarity_params = SIFT_params
+    data_source = 2
     flickr_bbox = bbox_wildkirchli
     db_query = eu_protected_sites
+    filter_authors_switch = True
+    spatial_clustering_params = cluster_params_HDBSCAN_spatial
+    # multi_clustering_params = cluster_params_HDBSCAN_multi
+    image_similarity_params = SIFT_params
     ################################################################
     ################################################################
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
-        # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
+        project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
 
-        project_name = 'db_test_switzerland'
+        # project_name = 'wildkirchli' #'db_test_switzerland'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -262,9 +269,9 @@ if __name__ == '__main__':
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
         '''
         # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/bridge/metadata_bridge_2019_07_23.csv"
-        # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli/metadata_wildkirchli_2019_07_12.csv"
+        # data_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli/metadata_wildkirchli_2019_07_12.csv"
         cluster_obj = ClusterMaster(data_source, spatial_clustering_params, data_path=data_path,
-                                    spatial_clustering=True, handle_authors=True)  # flickr_metadata_path
+                                    spatial_clustering=True, handle_authors=True)
         original_db_size = cluster_obj.original_df_size
         cluster_df = cluster_obj.df
         unique_cluster_lables = cluster_obj.unique_labels
@@ -284,10 +291,10 @@ if __name__ == '__main__':
         Conditionally apply
         Author filtering
         '''
-        if filter_authors:
-            for subset in subset_dfs:
+        if filter_authors_switch:
+            for label, subset in subset_dfs.items():
                 print("Filtering authors...")
-                subset_dfs[subset] = filter_authors(subset, subset_dfs[subset])
+                subset_dfs[label] = filter_authors(label, subset)
         '''
         3. Create image similarity matrix for
         all media objects inside a spatial cluster
@@ -295,15 +302,14 @@ if __name__ == '__main__':
          -> adding new columns (series in Pandas) with score values for each media object
          -> Possible cv algorithms: SIFT, SURF, ORB
         '''
-        index = 1
         cluster_obj_dict = {}
-        for subset in subset_dfs:
+        for index, (label, subset) in enumerate(subset_dfs.items(), 1):
             print("##" * 30)
-            print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {subset}")
+            print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {label}")
             cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params,
-                                             subset_dfs[subset])
-            subset_dfs[subset] = cv_obj.subset_df
-            index += 1
+                                             subset)
+            subset_dfs[label] = cv_obj.subset_df
+
         print("Image analysis for all spatial sub-clusters - done.")
         '''
         4. Create tag vocabulary (bag of words approach) for
@@ -311,7 +317,7 @@ if __name__ == '__main__':
         and add the tf-idf values as features to the cluster_dataframe
         IMPORTANT TO RE-ITERATE OVER THE SUBSET TO GET THE UPDATED REFERENCES FOR 'SUBSET'!
         '''
-        for subset in subset_dfs:
+        for label, subset in subset_dfs.items():
             pass
         #############!!!!!DEBRICATED!!!!!########################################################
         # '''
@@ -329,11 +335,11 @@ if __name__ == '__main__':
         Finding and linking scores above a given threshold to clusters
         which shall represent possible motives in the spatial clusters
         '''
-        for subset in subset_dfs:
-            print("##" * 30)
-            print(f"Network analysis of subset: {subset}")
-            net_analysis = NetworkAnalyser(subset, subset_dfs[subset])
-            subset_dfs[subset] = net_analysis.new_dataframe
+        print("##" * 30)
+        for label, subset in subset_dfs.items():
+            print(f"\rNetwork analysis of subset: {label}", end='')
+            net_analysis = NetworkAnalyser(label, subset)
+            subset_dfs[label] = net_analysis.new_dataframe
         '''
         6. Dumping all dataframes to pickle
         in the project folder
@@ -341,9 +347,9 @@ if __name__ == '__main__':
         print("##" * 30)
         print("Create output files")
         for k, subset in subset_dfs.items():
-            pickle_dataframes(k, subset, multi_clustering_params, image_similarity_params)
+            pickle_dataframes(k, subset, spatial_clustering_params, image_similarity_params)
             print("--" * 30)
-            cluster_html_inspect(k, subset, multi_clustering_params, image_similarity_params)
+            cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params)
             print("--" * 30)
 
         print("Finished.")

@@ -19,6 +19,7 @@ class FlickrQuerier:
         # decorator to wrap around functions to log if they are being called
         @classmethod
         def logit(self, func):
+            #preserve the passed functions (func) identity - so I doesn't point to the 'wrapper_func'
             @wraps(func)
             def wrapper_func(*args, **kwargs):
                 with open(FlickrQuerier.path_LOG, 'at') as log_f:
@@ -53,7 +54,7 @@ class FlickrQuerier:
         print("--" * 30)
         print(f"Downloading images into folder {project_name} to current directory.")
         self.get_images(self.unique_ids, self.flickr)
-        print("--" * 30)
+        print("\n--" * 30)
         print(f"Download images - done.")
         print("--" * 30)
         print("--" * 30)
@@ -138,7 +139,7 @@ class FlickrQuerier:
                 resource = urllib.request.urlopen(url_medium, context=ssl._create_unverified_context())
                 with open(self.image_path + '/' + f"{id}.jpg", 'wb') as image:
                     image.write(resource.read())
-                print(f"retrieved {index} of {len(ids)} images")
+                print(f"\rretrieved {index} of {len(ids)} images", end='')
 
             except Exception as e:
                 print(f"image not found: {e}")
@@ -212,7 +213,7 @@ class FlickrQuerier:
                     country = results['location']['country']['_content'].replace(csv_separator, '')
                 except Exception as e:
                     country = ''
-                    print(f"{e} not found. Continue")
+                    print(f"\n{e} not found. Continue")
 
                 '''
                 text clean up
@@ -248,9 +249,9 @@ class FlickrQuerier:
                     header = create_header(data)
                     f.write(f"{header}\n")
                 if index % 50 == 0 and index != 0:
-                    print(f"Line {index} processed")
+                    print(f"\rLine {index} processed", end='')
 
                 line = create_line(id, data)
                 f.write(f"{line}\n")
 
-        print(f"Created output file: {self.csv_output_path}")
+        print(f"\nCreated output file: {self.csv_output_path}")
