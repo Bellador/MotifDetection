@@ -3,4 +3,9 @@
 
 # But not these files...
 !.gitignore
-!*.py
+!main.py
+!clustering.py
+!db_querier.py
+!image_feature_detection.py
+!network_analysis.py
+!query_flickr_api.py
