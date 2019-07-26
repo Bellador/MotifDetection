@@ -9,6 +9,21 @@ import datetime
 import os
 import sys
 
+def check_coordinate_extend(label, subset):
+    extend_lat = (subset.lat.max() - subset.lat.min())
+    extend_lng = (subset.lng.max() - subset.lng.min())
+    '''
+    check if cluster is too widely spread which makes the abundance of motive
+    images unlikely.
+    '''
+    if extend_lat > max_lat_extend or extend_lng > max_lng_extend:
+        print(f"Too large spatial extend for {label} - Will not be further considered")
+        with open(project_path + '/spatial_extend_filter.txt', 'at') as f:
+            f.write(f"{label} removed. Extend: lat {extend_lat}, lng {extend_lng}\n")
+        return False
+    else:
+        return True
+
 def filter_authors(label, subset):
     '''
     Retaining only one media object per unique author and SUBCLUSTER
@@ -33,6 +48,7 @@ def filter_authors(label, subset):
 
     with open(project_path + '/author_filter_log.txt', 'at') as log:
         log.write("**" * 30 + '\n')
+        log.write(f"Cluster: {label}\n")
         log.write(f"Entries before: {rows_before_filter}\n")
         log.write(f"Entries after: {rows_after_filter}\n")
         log.write(f"Difference: {rows_before_filter - rows_after_filter}; -{round((rows_before_filter - rows_after_filter) / rows_before_filter * 100, 1)}%\n")
@@ -44,7 +60,15 @@ def filter_authors(label, subset):
     print(f"Entries after: {rows_after_filter}")
     print(f"Difference: {rows_before_filter - rows_after_filter}; -{round((rows_before_filter - rows_after_filter) / rows_before_filter * 100, 1)}%")
     print("**" * 30)
-    return subset
+
+    '''
+    Check:
+    If size of subcluster is still bigger than the predefined minimum cluster size 
+    '''
+    if rows_after_filter < spatial_clustering_params['min_cluster_size']:
+        return (subset, 'to_delete')
+    else:
+        return (subset, 'accepted')
 
 def pickle_dataframes(index, dataframe, cluster_params, image_params):
     try:
@@ -165,9 +189,9 @@ if __name__ == '__main__':
     JOIN switzerland as y
     ON ST_WITHIN(x.geometry, y.geom)
     WHERE x.georeferenced = 1
-    AND x.date_uploaded >= 1388534400
+    AND x.date_uploaded >= 1262304000
     AND x.date_uploaded <= 1420070400"""
-    #unixtimestamps for 2014 - 2015
+    #unixtimestamps for 2010 - 2015
     '''
     Flickr API: Set bounding box (lower left & upper right corner) for the desired research 
     area in the following way (note the quotes!):
@@ -187,8 +211,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 20, #20
-        'min_samples': 20 #20
+        'min_cluster_size': 40,
+        'min_samples': 40
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
@@ -226,10 +250,12 @@ if __name__ == '__main__':
     1. PostGIS database
     2. Flickr API
     '''
-    data_source = 2
+    data_source = 1
     flickr_bbox = bbox_wildkirchli
     db_query = eu_protected_sites
     filter_authors_switch = True
+    max_lng_extend = 0.05
+    max_lat_extend = 0.05
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
@@ -240,8 +266,6 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-
-        # project_name = 'wildkirchli' #'db_test_switzerland'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -268,10 +292,7 @@ if __name__ == '__main__':
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
         '''
-        # test_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/bridge/metadata_bridge_2019_07_23.csv"
-        # data_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli/metadata_wildkirchli_2019_07_12.csv"
-        cluster_obj = ClusterMaster(data_source, spatial_clustering_params, data_path=data_path,
-                                    spatial_clustering=True, handle_authors=True)
+        cluster_obj = ClusterMaster(data_source, spatial_clustering_params, data_path=data_path, spatial_clustering=True)
         original_db_size = cluster_obj.original_df_size
         cluster_df = cluster_obj.df
         unique_cluster_lables = cluster_obj.unique_labels
@@ -288,13 +309,49 @@ if __name__ == '__main__':
                 subset_dataframe = cluster_df[boolean_array]
                 subset_dfs[f'cluster_{cluster_label}'] = subset_dataframe
         '''
+        Checking spatial extend of subclusters
+        to far spread clusters do not support the existance of motives
+        and are therefor not further considered
+        '''
+        #keys that need to be deleted after the iteration over the dictionary
+        del_keys = []
+        print('**' * 30)
+        print("Checking subcluster spatial extend...")
+        for label, subset in subset_dfs.items():
+            check_ok = check_coordinate_extend(label, subset)
+            # True means the spatial extend is in the boundary limits
+            if check_ok:
+                continue
+            # False, spatial extend of subclaster too large
+            elif not check_ok:
+                del_keys.append(label)
+        #delete filtered subcluster keys
+        print(f"{len(del_keys)} clusters have a too large spatial extend and will be removed...")
+        for key in del_keys:
+            del subset_dfs[key]
+        print('**' * 30)
+        '''
         Conditionally apply
         Author filtering
         '''
         if filter_authors_switch:
+            del_keys = []
             for label, subset in subset_dfs.items():
                 print("Filtering authors...")
-                subset_dfs[label] = filter_authors(label, subset)
+                output = filter_authors(label, subset)
+                filtered_subset = output[0]
+                conditional = output[1]
+                if conditional == 'to_delete':
+                    del_keys.append(label)
+                elif conditional == 'accepted':
+                    subset_dfs[label] = filtered_subset
+            # delete filtered subcluster keys
+            print(f"{len(del_keys)} clusters are below min_cluster_size and will be removed...")
+            for key in del_keys:
+                del subset_dfs[key]
+            print('**' * 30)
+        print(f"{len(subset_dfs.keys())} clusters left after filtering process")
+        print('**' * 30)
         '''
         3. Create image similarity matrix for
         all media objects inside a spatial cluster

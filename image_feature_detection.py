@@ -151,9 +151,15 @@ class ImageSimilarityAnalyser:
         here reduce the redundancy
         by avoiding to check the same comparisons twice                
         '''
-        [df.set_value(index, column, bf.knnMatch(self.feature_dict[index]['ds'], self.feature_dict[column]['ds'], k=2))
-         for check1, index in enumerate(indexes)
-            for check2, column in enumerate(columns) if check2 >= check1 and check2 != check1]
+        for check1, index in enumerate(indexes):
+            for check2, column in enumerate(columns):
+                if check2 >= check1 and check2 != check1:
+                    try:
+                        value = bf.knnMatch(self.feature_dict[index]['ds'], self.feature_dict[column]['ds'], k=2)
+                        df.set_value(index, column, value)
+                    except Exception as e:
+                        print(f"{e} occurred during image matching: NaN value set")
+                        df.set_value(index, column, np.nan)
 
         print("Populated dataframe with image matches - done.")
         recorded_match_lengths = []
@@ -170,12 +176,7 @@ class ImageSimilarityAnalyser:
                         for m, n in matches:
                             if m.distance < self.lowe_ratio * n.distance:
                                 similar_regions.append([m])
-                        '''
-                        Following:
-                        Score based on similar regions compared to match length:
-                        range of match length was witnessed to be between 150 and 1300 (~factor 10)
-                        thats why new approach
-                        '''
+
                         score = len(similar_regions)
 
                         df_similiarity.set_value(row, col, score)

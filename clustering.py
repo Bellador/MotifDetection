@@ -8,7 +8,7 @@ from random import randint
 
 class ClusterMaster:
 
-    def __init__(self, data_source, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True, multi_clustering_inc_coordinates=False, handle_authors=False):
+    def __init__(self, data_source, params_dict, used_lowe_ratio=0, data_path=None, subset_df=None, spatial_clustering=True, multi_clustering_inc_coordinates=False):
         #handle_authors retains only one media object / image per unique author and spatial cluster
         #accounting for the dominant authors and subsequent snapshots (often bulk uploads) of an object
         print("--" * 30)
@@ -20,16 +20,11 @@ class ClusterMaster:
         self.spatial_clustering = spatial_clustering
         self.multi_clustering_inc_coordinates = multi_clustering_inc_coordinates
         self.subset_df = subset_df
-        self.handle_authors = handle_authors
 
         self.df = self.read_data()
         print("--" * 30)
         print("Reading metadata dataframe - done.")
         self.unique_labels = self.clustering()
-        #MOVED TO MAIN.PY
-        # if self.handle_authors:
-        #     print("Filtering authors...")
-        #     self.filter_authors()
         print("--" * 30)
         print("Clustering process - done.")
         print("--" * 30)
