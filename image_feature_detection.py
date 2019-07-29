@@ -173,14 +173,18 @@ class ImageSimilarityAnalyser:
                     if len(matches) == 0:
                         df_similiarity.set_value(row, col, 0)
                     else:
-                        for m, n in matches:
-                            if m.distance < self.lowe_ratio * n.distance:
-                                similar_regions.append([m])
-
-                        score = len(similar_regions)
+                        try:
+                            for m, n in matches:
+                                if m.distance < self.lowe_ratio * n.distance:
+                                    similar_regions.append([m])
+                            score = len(similar_regions)
+                        except Exception as e:
+                            print("//" * 30)
+                            print(f"Error {e} encountered...")
+                            print("//" * 30)
+                            score = 0
 
                         df_similiarity.set_value(row, col, score)
-
                     recorded_match_lengths.append(len(matches))
 
                 elif math.isnan(matches):

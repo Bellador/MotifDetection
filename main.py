@@ -4,10 +4,59 @@ from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalyser
 from network_analysis import NetworkAnalyser
 from random import randint
+import matplotlib.pyplot as plt
+import numpy as np
 import warnings
 import datetime
 import os
 import sys
+
+def plot_clusters(subset_name, subset):
+    unique_labels = subset.multi_cluster_label.unique()
+    if len(unique_labels) > 1:
+        # Black removed and is used for noise instead.
+        colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+        '''
+        Sort labels so that the noise points get plotted first 
+        and don't cover important clusters
+        '''
+        for label_counter, (cluster_label, col) in enumerate(zip(sorted(unique_labels, key=lambda x: x), colors)):
+            # filter dataframe for rows of given cluster
+            label = f"c_{label_counter}"
+            if cluster_label == -1:
+                # Black used for noise.
+                col = [0, 0, 0, 1]
+                label = 'noise'
+            # returns boolean array with true when condition is met
+            boolean_array = subset['multi_cluster_label'] == cluster_label
+            rows = subset[boolean_array]
+            '''
+            latitude and longitude
+            must most likely be exchanged for some reason
+            to match the ArcMap reprentation
+            '''
+            plt.plot(rows.loc[:, 'lng'], rows.loc[:, 'lat'], 'o', markerfacecolor=tuple(col), markeredgecolor='k',
+                     markersize=14, label=label)  # replaced xy with X
+        '''
+        Adjust plot X and Y extend on
+        all points except noise
+
+        query all points that are not noise from dataframe
+        '''
+        boolean_array_not_noise = subset.multi_cluster_label != -1
+        not_noise = subset[boolean_array_not_noise]
+
+        buffer = 0.0005
+
+        xlim_left = not_noise.lng.min() - buffer
+        xlim_right = not_noise.lng.max() + buffer
+        ylim_bottom = not_noise.lat.min() - buffer
+        ylim_top = not_noise.lat.max() + buffer
+        plt.xlim(left=xlim_left, right=xlim_right)
+        plt.ylim(bottom=ylim_bottom, top=ylim_top)
+        plt.title(f"Image similarity {subset_name}")
+        plt.legend()
+        plt.show()
 
 def check_coordinate_extend(label, subset):
     extend_lat = (subset.lat.max() - subset.lat.min())
@@ -189,8 +238,9 @@ if __name__ == '__main__':
     JOIN switzerland as y
     ON ST_WITHIN(x.geometry, y.geom)
     WHERE x.georeferenced = 1
-    AND x.date_uploaded >= 1262304000
-    AND x.date_uploaded <= 1420070400"""
+    """
+    # AND x.date_uploaded >= 1262304000
+    # AND x.date_uploaded <= 1420070400
     #unixtimestamps for 2010 - 2015
     '''
     Flickr API: Set bounding box (lower left & upper right corner) for the desired research 
@@ -211,8 +261,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 40,
-        'min_samples': 40
+        'min_cluster_size': 10,
+        'min_samples': 10
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
@@ -232,7 +282,7 @@ if __name__ == '__main__':
     '''
     SIFT_params = {
         'algorithm': 'SIFT',
-        'lowe_ratio': 0.7, #0.775
+        'lowe_ratio': 0.6, #0.7
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -245,23 +295,18 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    '''
-    Define data source:
-    1. PostGIS database
-    2. Flickr API
-    '''
-    data_source = 1
-    flickr_bbox = bbox_wildkirchli
+    data_source = 1 #1 = PostGIS database; 2 = Flickr API
     db_query = eu_protected_sites
+    flickr_bbox = bbox_wildkirchli
     filter_authors_switch = True
     max_lng_extend = 0.05
     max_lat_extend = 0.05
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
+    min_motives_per_cluster = 3
     ################################################################
     ################################################################
-
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -398,15 +443,50 @@ if __name__ == '__main__':
             net_analysis = NetworkAnalyser(label, subset)
             subset_dfs[label] = net_analysis.new_dataframe
         '''
+        5.1
+        Check the final sub-cluster (exc. Noise) sizes to be above the defined
+        min_motives_clusters value
+        if None no filter shall be applied
+        '''
+        print("##" * 30)
+        print(f"Checking for motive clusters with minimum size of {min_motives_per_cluster}...")
+        del_keys = []
+        final_len_before = len(subset_dfs.keys())
+        if min_motives_per_cluster != None:
+            for cluster_name, subset in subset_dfs.items():
+                exclude = True
+                #find unique cluster labels to filter out noise clusters
+                unique_cluster_labels = subset.multi_cluster_label.unique()
+                if len(unique_cluster_labels) != 0:
+                    for label in unique_cluster_labels:
+                        if label != -1:
+                            boolean_array = (subset['multi_cluster_label'] == label)
+                            len_labels = len(subset[boolean_array])
+                            if len_labels >= min_motives_per_cluster:
+                                exclude = False
+                if exclude:
+                    del_keys.append(cluster_name)
+        #delete clusters below the minimum size
+        for key in del_keys:
+            del subset_dfs[key]
+        final_len_after = len(subset_dfs.keys())
+        print(f"Removed {final_len_before-final_len_after} of {final_len_before} sub-clusters")
+        print(f"Remaining: {final_len_after}")
+        '''
         6. Dumping all dataframes to pickle
         in the project folder
         '''
         print("##" * 30)
-        print("Create output files")
+        print("Create output file(s)")
         for k, subset in subset_dfs.items():
             pickle_dataframes(k, subset, spatial_clustering_params, image_similarity_params)
             print("--" * 30)
             cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params)
             print("--" * 30)
-
+        '''
+        Plot
+        resulting image motive clusters
+        '''
+        for label, subset in subset_dfs.items():
+            plot_clusters(label, subset)
         print("Finished.")

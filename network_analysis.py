@@ -81,51 +81,51 @@ class NetworkAnalyser:
         4. Plot
         if minimum one cluster besides noise exists
         '''
-        unique_labels = dataframe.multi_cluster_label.unique()
+        # unique_labels = dataframe.multi_cluster_label.unique()
 
-        if len(unique_labels) > 1:
-            # Black removed and is used for noise instead.
-            colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
-            '''
-            Sort labels so that the noise points get plotted first 
-            and don't cover important clusters
-            '''
-            for label_counter, (cluster_label, col) in enumerate(zip(sorted(unique_labels, key=lambda x: x), colors)):
-                # filter dataframe for rows of given cluster
-                label = f"c_{label_counter}"
-                if cluster_label == -1:
-                    # Black used for noise.
-                    col = [0, 0, 0, 1]
-                    label = 'noise'
-                # returns boolean array with true when condition is met
-                boolean_array = self.dataframe['multi_cluster_label'] == cluster_label
-                rows = self.dataframe[boolean_array]
-                '''
-                latitude and longitude
-                must most likely be exchanged for some reason
-                to match the ArcMap reprentation
-                '''
-                plt.plot(rows.loc[:, 'lng'], rows.loc[:, 'lat'], 'o', markerfacecolor=tuple(col), markeredgecolor='k',
-                         markersize=14, label=label)  # replaced xy with X
-            '''
-            Adjust plot X and Y extend on
-            all points except noise
-
-            query all points that are not noise from dataframe
-            '''
-            boolean_array_not_noise = self.dataframe.spatial_cluster_label != -1
-            not_noise = self.dataframe[boolean_array_not_noise]
-
-            buffer = 0.0005
-
-            xlim_left = not_noise.lng.min() - buffer
-            xlim_right = not_noise.lng.max() + buffer
-            ylim_bottom = not_noise.lat.min() - buffer
-            ylim_top = not_noise.lat.max() + buffer
-            plt.xlim(left=xlim_left, right=xlim_right)
-            plt.ylim(bottom=ylim_bottom, top=ylim_top)
-            plt.title(f"Image similarity {self.subset_name}")
-            plt.legend()
-            plt.show()
+        # if len(unique_labels) > 1:
+        #     # Black removed and is used for noise instead.
+        #     colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+        #     '''
+        #     Sort labels so that the noise points get plotted first
+        #     and don't cover important clusters
+        #     '''
+        #     for label_counter, (cluster_label, col) in enumerate(zip(sorted(unique_labels, key=lambda x: x), colors)):
+        #         # filter dataframe for rows of given cluster
+        #         label = f"c_{label_counter}"
+        #         if cluster_label == -1:
+        #             # Black used for noise.
+        #             col = [0, 0, 0, 1]
+        #             label = 'noise'
+        #         # returns boolean array with true when condition is met
+        #         boolean_array = self.dataframe['multi_cluster_label'] == cluster_label
+        #         rows = self.dataframe[boolean_array]
+        #         '''
+        #         latitude and longitude
+        #         must most likely be exchanged for some reason
+        #         to match the ArcMap reprentation
+        #         '''
+        #         plt.plot(rows.loc[:, 'lng'], rows.loc[:, 'lat'], 'o', markerfacecolor=tuple(col), markeredgecolor='k',
+        #                  markersize=14, label=label)  # replaced xy with X
+        #     '''
+        #     Adjust plot X and Y extend on
+        #     all points except noise
+        #
+        #     query all points that are not noise from dataframe
+        #     '''
+        #     boolean_array_not_noise = self.dataframe.multi_cluster_label != -1
+        #     not_noise = self.dataframe[boolean_array_not_noise]
+        #
+        #     buffer = 0.0005
+        #
+        #     xlim_left = not_noise.lng.min() - buffer
+        #     xlim_right = not_noise.lng.max() + buffer
+        #     ylim_bottom = not_noise.lat.min() - buffer
+        #     ylim_top = not_noise.lat.max() + buffer
+        #     plt.xlim(left=xlim_left, right=xlim_right)
+        #     plt.ylim(bottom=ylim_bottom, top=ylim_top)
+        #     plt.title(f"Image similarity {self.subset_name}")
+        #     plt.legend()
+        #     plt.show()
 
         return dataframe

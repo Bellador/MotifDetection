@@ -131,59 +131,59 @@ class ClusterMaster:
             '''
             unique_labels = set(clusters_labels)
 
-        if n_clusters > 0:
-            # Black removed and is used for noise instead.
-            colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
-            '''
-            Sort labels so that the noise points get plotted first 
-            and don't cover important clusters
-            '''
-            for cluster_label, col in zip(sorted(unique_labels, key=lambda x: x), colors):
-                #filter dataframe for rows of given cluster
-                label = cluster_label
-                if cluster_label == -1:
-                    # Black used for noise.
-                    col = [0, 0, 0, 1]
-                    label = 'noise'
-                #returns boolean array with true when condition is met
-                if self.spatial_clustering:
-                    boolean_array = self.df['spatial_cluster_label'] == cluster_label
-                else:
-                    boolean_array = self.df['multi_cluster_label'] == cluster_label
-                rows = self.df[boolean_array]
-                '''
-                Adjust plot X and Y extend on
-                all points except noise
-                
-                1. query all points that are not noise from dataframe
-                '''
-                boolean_array_not_noise = self.df.spatial_cluster_label != -1
-                not_noise = self.df[boolean_array_not_noise]
-
-                buffer = 0.0005
-
-                xlim_left = not_noise.lng.min() - buffer
-                xlim_right = not_noise.lng.max() + buffer
-                ylim_bottom = not_noise.lat.min() - buffer
-                ylim_top = not_noise.lat.max() + buffer
-                plt.xlim(left=xlim_left, right=xlim_right)
-                plt.ylim(bottom=ylim_bottom, top=ylim_top)
-                '''
-                latitude and longitude
-                must most likely be exchanged for some reason
-                to match the ArcMap reprentation
-                '''
-                plt.plot(rows.loc[:, 'lng'], rows.loc[:, 'lat'], 'o', markerfacecolor=tuple(col), markeredgecolor='k', markersize=14, label=label) #replaced xy with X
-
-            if self.params['algorithm'] == 'HDBSCAN':
-                plt.title(f'nr clusters: {n_clusters}, min_cluster_size: {self.min_cluster_size}, '
-                          f'min samples: {self.min_samples}, image LOWE ratio: {self.used_lowe_ratio}')
-            elif self.params['algorithm'] == 'DBSCAN':
-                plt.title(f'nr clusters: {n_clusters}, eps: {self.eps}, min samples: {self.min_samples}, image threshold: {self.used_lowe_ratio}')
-            plt.legend()
-            plt.show()
-
-        else:
-            print("No clusters found.")
+        # if n_clusters > 0:
+        #     # Black removed and is used for noise instead.
+        #     colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+        #     '''
+        #     Sort labels so that the noise points get plotted first
+        #     and don't cover important clusters
+        #     '''
+        #     for cluster_label, col in zip(sorted(unique_labels, key=lambda x: x), colors):
+        #         #filter dataframe for rows of given cluster
+        #         label = cluster_label
+        #         if cluster_label == -1:
+        #             # Black used for noise.
+        #             col = [0, 0, 0, 1]
+        #             label = 'noise'
+        #         #returns boolean array with true when condition is met
+        #         if self.spatial_clustering:
+        #             boolean_array = self.df['spatial_cluster_label'] == cluster_label
+        #         else:
+        #             boolean_array = self.df['multi_cluster_label'] == cluster_label
+        #         rows = self.df[boolean_array]
+        #         '''
+        #         Adjust plot X and Y extend on
+        #         all points except noise
+        #
+        #         1. query all points that are not noise from dataframe
+        #         '''
+        #         boolean_array_not_noise = self.df.spatial_cluster_label != -1
+        #         not_noise = self.df[boolean_array_not_noise]
+        #
+        #         buffer = 0.0005
+        #
+        #         xlim_left = not_noise.lng.min() - buffer
+        #         xlim_right = not_noise.lng.max() + buffer
+        #         ylim_bottom = not_noise.lat.min() - buffer
+        #         ylim_top = not_noise.lat.max() + buffer
+        #         plt.xlim(left=xlim_left, right=xlim_right)
+        #         plt.ylim(bottom=ylim_bottom, top=ylim_top)
+        #         '''
+        #         latitude and longitude
+        #         must most likely be exchanged for some reason
+        #         to match the ArcMap reprentation
+        #         '''
+        #         plt.plot(rows.loc[:, 'lng'], rows.loc[:, 'lat'], 'o', markerfacecolor=tuple(col), markeredgecolor='k', markersize=14, label=label) #replaced xy with X
+        #
+        #     if self.params['algorithm'] == 'HDBSCAN':
+        #         plt.title(f'nr clusters: {n_clusters}, min_cluster_size: {self.min_cluster_size}, '
+        #                   f'min samples: {self.min_samples}, image LOWE ratio: {self.used_lowe_ratio}')
+        #     elif self.params['algorithm'] == 'DBSCAN':
+        #         plt.title(f'nr clusters: {n_clusters}, eps: {self.eps}, min samples: {self.min_samples}, image threshold: {self.used_lowe_ratio}')
+        #     plt.legend()
+        #     plt.show()
+        #
+        # else:
+        #     print("No clusters found.")
         return unique_labels
         #or add cluster_labels as new column to the dataframe and return that
