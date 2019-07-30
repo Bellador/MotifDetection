@@ -91,7 +91,6 @@ class ClusterMaster:
                 '''
                 boolean_array_zero_vals = (input_image_similiarity_matrix.nunique(axis=0) == 1)  # axis 0 represents index (rows), 1 unique element, namely 0
                 input_features = input_features_[~boolean_array_zero_vals]  # ~ is used to invert boolean series
-                print("")
 
         if input_features.shape[0] == 0 or input_features.shape[1] == 0:
             if self.spatial_clustering:
@@ -100,7 +99,6 @@ class ClusterMaster:
                 self.df.loc[:, 'multi_cluster_label'] = -1
             print("No more input features left! No Clusters")
             return None
-
         else:
             clusters_labels = self.clusterer.fit_predict(input_features) #array of numbers where unique numbers identify points that belong to the same cluster; -1 is noise
             n_clusters = len(set(clusters_labels)) - (1 if -1 in clusters_labels else 0)

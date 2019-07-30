@@ -9,7 +9,12 @@ import os
 from functools import wraps
 
 class FlickrQuerier:
-
+    '''
+    IMPORTANT NOTICE:
+    the flickr API does not return more than 4'000 results per query even if all returned pages are parsed.
+    This is a bug/feature (https://www.flickr.com/groups/51035612836@N01/discuss/72157654309722194/)
+    Therefore, queries have to be constructed in a way that less than 4'000 are returned.
+    '''
     path_CREDENTIALS = "C:/Users/mhartman/PycharmProjects/MotiveDetection/FLICKR_API_KEY.txt"
     path_saveimages_wildkirchli = "C:/Users/mhartman/Documents/100mDataset/wildkirchli_images/"
     path_LOG = "C:/Users/mhartman/PycharmProjects/MotiveDetection/LOG_FLICKR_API.txt"

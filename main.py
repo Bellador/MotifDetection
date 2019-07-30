@@ -232,10 +232,10 @@ if __name__ == '__main__':
     Database queries:
     
     '''
-    eu_protected_sites = """
+    switzerland = """
     SELECT x.photo_id, x.user_nsid, x.download_url, x.lat, x.lng
     FROM data_100m as x
-    JOIN switzerland as y
+    JOIN wildkirchli as y
     ON ST_WITHIN(x.geometry, y.geom)
     WHERE x.georeferenced = 1
     """
@@ -261,8 +261,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 10,
-        'min_samples': 10
+        'min_cluster_size': 2,
+        'min_samples': 2
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
@@ -282,29 +282,32 @@ if __name__ == '__main__':
     '''
     SIFT_params = {
         'algorithm': 'SIFT',
-        'lowe_ratio': 0.6, #0.7
+        'lowe_ratio': 0.7,
+        'network_threshold': 85 #100
     }
     SURF_params = {
         'algorithm': 'SURF',
         'lowe_ratio': 0.7,
+        'network_threshold': 100
     }
     ORB_params = {
         'algorithm': 'ORB',
         'lowe_ratio': 0.7,
+        'network_threshold': 100
     }
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = eu_protected_sites
+    data_source = 2 #1 = PostGIS database; 2 = Flickr API
+    db_query = switzerland
     flickr_bbox = bbox_wildkirchli
-    filter_authors_switch = True
+    filter_authors_switch = False
     max_lng_extend = 0.05
     max_lat_extend = 0.05
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
-    min_motives_per_cluster = 3
+    min_motives_per_cluster = 3 #None if this step shall be skipped
     ################################################################
     ################################################################
     with warnings.catch_warnings():
@@ -440,7 +443,7 @@ if __name__ == '__main__':
         print("##" * 30)
         for label, subset in subset_dfs.items():
             print(f"\rNetwork analysis of subset: {label}", end='')
-            net_analysis = NetworkAnalyser(label, subset)
+            net_analysis = NetworkAnalyser(label, subset, threshold=image_similarity_params['network_threshold'])
             subset_dfs[label] = net_analysis.new_dataframe
         '''
         5.1

@@ -8,42 +8,31 @@ class NetworkAnalyser:
         self.subset_name = subset_name
         self.dataframe = dataframe
         self.threshold = threshold
-
         #check for too low threshold. Assert raised if conndition is NOT true
         assert self.threshold > 50, "Specified threshold is lower than (min: 50, best:100) recommended to successfully identify motive images!"
-        self.new_dataframe = self.network_analysis(dataframe)
+        self.new_dataframe = self.network_analysis(dataframe, threshold=self.threshold)
         print("")
 
     def network_analysis(self, dataframe, threshold=100):
         # the amount of rows determines how many images where compared which is needed for the cropping
         images = len(dataframe.index.values)
         df = dataframe.iloc[:, -images:]
-        '''
-        1. Define edge threshold to connect vertecies
-        Calculate the median of similarity scores above ZERO in df
-        '''
-        scores_above_zero = []
-
-        # iterate over colums which returns colum_label and the content as tuple
-        for c, v in df.iteritems():
-            for element in v:
-                if element != 0:
-                    scores_above_zero.append(element)
         # boolean to see which values are above the threshold, second parameter specifies the value for if the condition is false
+
         # mask_df = df.where(df > threshold, False).where(df <= threshold, True)
         '''
-        2. Crawling through df to find similar neighbours
+        1. Crawling through df to find similar neighbours
         Iterate over rows, find neighbours/images with a similarity score above the threshold
         '''
         # iterate over the rows which returns the index_name and the row as dictionary with column_labels as keys
         clusters = {}
         # list of indexes which are still not in an cluster and over which will still be iterated
         valid_indexes = list(df.index.values)
-        for counter, (i, v) in enumerate(df.iterrows()):
+        for counter, (i, r) in enumerate(df.iterrows()):
             if i in valid_indexes:
                 clusters[counter] = []
                 # iterate over the initial row to find neighbours
-                for k, score in v.items():
+                for k, score in r.items():
                     if k in valid_indexes:
                         if score > threshold:
                             clusters[counter].append(k)
@@ -54,7 +43,6 @@ class NetworkAnalyser:
                 if len(clusters[counter]) != 0:
                     # if at least one neighbour has been found for this index, then the index itself is also added to the list
                     clusters[counter].append(i)
-
                     # iterate over previously found neighbours and add any thereof neigbours to the same cluster
                     for neighbour in clusters[counter]:
                         # get row from df mit said neighbour id
@@ -65,7 +53,7 @@ class NetworkAnalyser:
                                 clusters[counter].append(series_index[counter2])
                                 valid_indexes.remove(series_index[counter2])
         '''
-        3. Add Cluster labels
+        2. Add Cluster labels
         to the dataframe (subset)
         '''
         dataframe.loc[:, 'multi_cluster_label'] = np.nan
@@ -78,7 +66,7 @@ class NetworkAnalyser:
         self.dataframe.loc[boolean_array, 'multi_cluster_label'] = -1
 
         '''
-        4. Plot
+        3. Plot
         if minimum one cluster besides noise exists
         '''
         # unique_labels = dataframe.multi_cluster_label.unique()

@@ -125,7 +125,11 @@ class ImageSimilarityAnalyser:
 
         for obj in self.image_objects:
             #the None defines if a mask shall be used or not
-            keypoints, descriptors = alg.detectAndCompute(self.image_objects[obj], None)
+            try:
+                keypoints, descriptors = alg.detectAndCompute(self.image_objects[obj], None)
+            except:
+                keypoints = []
+                descriptors = []
             self.feature_dict[obj]['kp'] = keypoints
             self.feature_dict[obj]['ds'] = descriptors
 
