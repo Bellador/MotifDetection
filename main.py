@@ -227,6 +227,25 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params):
 
     print(f"Created inspection html file {file_name} in folder {folder_name}")
 
+
+def cluster_score(dataset):
+    cluster_scores = {}
+    for sb_name, sb_data in dataset.items():
+        cluster_scores[sb_name] = {'nr_subclusters': None,
+                                   'timespan': None,
+                                   'nr_unique_authors': None,
+                                   'images_to_noise': None,
+                                   'final_score': None}
+        #nr of subclusters
+        unique_cluster_labels = sb_data['multi_cluster_label'].unique()
+        nr_subclusters = len([1 for label in unique_cluster_labels if label != -1])
+        #--------------------------------------------------------------------------
+        #cluster media object vs noise media objects (images to noise)
+        labels = sb_data['multi_cluster_label']
+
+
+    return cluster_scores
+
 if __name__ == '__main__':
     '''
     Database queries:
@@ -235,7 +254,7 @@ if __name__ == '__main__':
     switzerland = """
     SELECT x.photo_id, x.user_nsid, x.download_url, x.lat, x.lng
     FROM data_100m as x
-    JOIN wildkirchli as y
+    JOIN natura2000_projected as y
     ON ST_WITHIN(x.geometry, y.geom)
     WHERE x.georeferenced = 1
     """
@@ -261,8 +280,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 2,
-        'min_samples': 2
+        'min_cluster_size': 3,
+        'min_samples': 3
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
@@ -283,7 +302,7 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 85 #100
+        'network_threshold': 100 #100
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -298,10 +317,10 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    data_source = 2 #1 = PostGIS database; 2 = Flickr API
+    data_source = 1 #1 = PostGIS database; 2 = Flickr API
     db_query = switzerland
     flickr_bbox = bbox_wildkirchli
-    filter_authors_switch = False
+    filter_authors_switch = True
     max_lng_extend = 0.05
     max_lat_extend = 0.05
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
@@ -476,15 +495,30 @@ if __name__ == '__main__':
         print(f"Removed {final_len_before-final_len_after} of {final_len_before} sub-clusters")
         print(f"Remaining: {final_len_after}")
         '''
+        6. Cluster Scores
+        calculate and evaluate clusters based on certain parameters related to the included sub-clusters:
+            - amount of authors
+            - timespan between oldest and newest media object
+            - nr. of sub-clusters
+            - amount of clsutered images compared to noise media objects
+            ...
+        '''
+        #dictionary with cluster id key and its score as value
+        cluster_scores = cluster_score(subset_dfs)
+        '''
         6. Dumping all dataframes to pickle
         in the project folder
         '''
         print("##" * 30)
         print("Create output file(s)")
+        '''
+        Sorting of Output:
+        According to the preceeding calculated cluster scores
+        '''
         for k, subset in subset_dfs.items():
-            pickle_dataframes(k, subset, spatial_clustering_params, image_similarity_params)
+            pickle_dataframes(k, subset, spatial_clustering_params, image_similarity_params, cluster_scores)
             print("--" * 30)
-            cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params)
+            cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params, cluster_scores)
             print("--" * 30)
         '''
         Plot
