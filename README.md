@@ -1,2 +1,3 @@
 # MotiveDetection
-detect spatially clustered images that contain similar landscape motives
+Through social media induced tourism people are drawn to places that were previously not experiencing much touristic attentation. Drastic and rapid changes in a locations popularity can have serious effects on the local population, the infrastructure and, last but not least on the environment. Therefore, the monitoring and analysis of the social media induced tourism is more important than ever to insure local agencies to act in time and occurding to the observed circumstances. Locations that experienced strong attention on social media such as Instagram where shown to be characterised by distinct, reoccuring Motive Images. These images are used as proxy signals that indicate the location of an exsiting or upcoming social media induced tourism hot spot.  
+This script uses computer vision image analysis and spatial clustering to achieve exactly that. 
