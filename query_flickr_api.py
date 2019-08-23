@@ -229,12 +229,12 @@ class FlickrQuerier:
                 title = remove_non_ascii(results['title']['_content'].replace(csv_separator, ''))
 
                 data = {
-                    'author_id': results['owner']['nsid'].replace(csv_separator, ''),
+                    'user_nsid': results['owner']['nsid'].replace(csv_separator, ''),
                     'author_origin': results['owner']['location'].replace(csv_separator, ''),
                     'title': title,
                     'description': description,
-                    'upload_date': results['dates']['posted'].replace(csv_separator, ''),
-                    'taken_date': results['dates']['taken'].replace(csv_separator, ''),
+                    'date_uploaded': results['dates']['posted'].replace(csv_separator, ''),
+                    'date_taken': results['dates']['taken'].replace(csv_separator, ''),
                     'views': results['views'].replace(csv_separator, ''),
                     'url': results['urls']['url'][0]['_content'].replace(csv_separator, ''),
                     'tags':  tag_string,

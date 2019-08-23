@@ -6,6 +6,7 @@ from network_analysis import NetworkAnalyser
 from random import randint
 import matplotlib.pyplot as plt
 import numpy as np
+import statistics
 import warnings
 import datetime
 import os
@@ -119,12 +120,12 @@ def filter_authors(label, subset):
     else:
         return (subset, 'accepted')
 
-def pickle_dataframes(index, dataframe, cluster_params, image_params):
+def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_scores):
     try:
         pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
         if not os.path.exists(pickle_path):
             os.makedirs(pickle_path)
-        name = '{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_scores[index]['final_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                         image_params['algorithm'], image_params['lowe_ratio'], index, datetime.datetime.now())
         dataframe.to_pickle(os.path.join(pickle_path, name))
         print(f"Pickling: {name}")
@@ -132,7 +133,7 @@ def pickle_dataframes(index, dataframe, cluster_params, image_params):
     except Exception as e:
         print(f"Error: {e} occurred while pickling dataframe {index}")
 
-def cluster_html_inspect(index, dataframe, cluster_params, image_params):
+def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster_scores):
     '''
     create an html file that can be insepcted in the browser that links
     images contained in clusters directly to their source path for
@@ -151,7 +152,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params):
     else:
         print(f"Project folder {folder_name} exists already.")
 
-    file_name = '{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.html'.format(cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+    file_name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.html'.format(cluster_scores[index]['final_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                          image_params['algorithm'], image_params['lowe_ratio'], index,
                                          datetime.datetime.now())
     #Database
@@ -227,23 +228,84 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params):
 
     print(f"Created inspection html file {file_name} in folder {folder_name}")
 
+def calc_cluster_scores(dataset):
+    '''
+    Use these scores to evaluete and sort the final cluster outputs
+    The scores will be added to the html and pickle dataframe dump files
 
-def cluster_score(dataset):
+    :param dataset:
+    :return:
+    '''
     cluster_scores = {}
     for sb_name, sb_data in dataset.items():
-        cluster_scores[sb_name] = {'nr_subclusters': None,
-                                   'timespan': None,
-                                   'nr_unique_authors': None,
-                                   'images_to_noise': None,
-                                   'final_score': None}
+        final_score = None
         #nr of subclusters
-        unique_cluster_labels = sb_data['multi_cluster_label'].unique()
-        nr_subclusters = len([1 for label in unique_cluster_labels if label != -1])
-        #--------------------------------------------------------------------------
-        #cluster media object vs noise media objects (images to noise)
-        labels = sb_data['multi_cluster_label']
+        cluster_labels = sb_data['multi_cluster_label'].unique()
+        cluster_labels_no_noise = [label for label in cluster_labels if label != -1]
+        nr_subclusters = len(cluster_labels_no_noise)
+        if nr_subclusters != 0:
+            #--------------------------------------------------------------------------
+            #calculate average cluster size
+            sizes = []
+            for label in cluster_labels_no_noise:
+                labels = sb_data[sb_data['multi_cluster_label'] == label]
+                sizes.append(len(labels.index.values))
+            mean_subcluster_size = statistics.mean(sizes)
 
+            #---------------------------------------------------------------------------
+            #calculate the subcluster timespans and take the mean
+            timespans = []
+            for label in cluster_labels_no_noise:
+                timestamps = sb_data.loc[sb_data['multi_cluster_label'] == label]['date_uploaded']
+                sordted_timestamps = list(timestamps.sort_values(ascending=False))
+                try:
+                    timespans.append(int(sordted_timestamps[0]) - int(sordted_timestamps[-1]))
+                except Exception as e:
+                    mean_timespan = None
+            mean_timespan = statistics.mean(timespans)
+            #---------------------------------------------------------------------------
+            #calculate number of unique authors per subcluster and take the mean
+            count_unique_auhtors = []
+            for label in cluster_labels_no_noise:
+                user_nsids = sb_data.loc[sb_data['multi_cluster_label'] == label]['user_nsid']
+                count_unique_auhtors.append(len(user_nsids.unique()))
+            mean_unique_authors = statistics.mean(count_unique_auhtors)
+            # ---------------------------------------------------------------------------
+            # Add values to dictionary
+            cluster_scores[sb_name] = {'nr_subclusters': nr_subclusters,
+                                       'mean_subcluster_size': mean_subcluster_size,
+                                       'mean_timespan': mean_timespan,
+                                       'mean_unique_authors': mean_unique_authors,
+                                       'final_score': final_score}
+        else:
+            final_score = 0
+            cluster_scores[sb_name] = {'nr_subclusters': 0,
+                                       'mean_subcluster_size': 0,
+                                       'mean_timespan': 0,
+                                       'mean_unique_authors': 0,
+                                       'final_score': final_score}
+    # ---------------------------------------------------------------------------
+    # Calculate the final subcluster scores based on the subscore of each (their range) relativ to one another
+    overall_mean_nr_subclusters = []
+    overall_mean_subcluster_size = []
+    overall_mean_timespan = []
+    overall_mean_unique_authors = []
 
+    for k, v in cluster_scores.items():
+        overall_mean_nr_subclusters.append(v['nr_subclusters'])
+        overall_mean_subcluster_size.append(v['mean_subcluster_size'])
+        overall_mean_timespan.append(v['mean_timespan'])
+        overall_mean_unique_authors.append(v['mean_unique_authors'])
+
+    overall_mean_nr_subclusters = statistics.mean(overall_mean_nr_subclusters)
+    overall_mean_subcluster_size = statistics.mean(overall_mean_subcluster_size)
+    overall_mean_timespan = statistics.mean(overall_mean_timespan)
+    overall_mean_unique_authors = statistics.mean(overall_mean_unique_authors)
+
+    for k, v in cluster_scores.items():
+        if v['final_score'] != 0:
+            v['final_score'] = round((v['nr_subclusters']/overall_mean_nr_subclusters) + (v['mean_subcluster_size']/overall_mean_subcluster_size) \
+                               + (1 / (v['mean_timespan']/overall_mean_timespan)) + (v['mean_unique_authors']/overall_mean_unique_authors), 2)
     return cluster_scores
 
 if __name__ == '__main__':
@@ -252,9 +314,9 @@ if __name__ == '__main__':
     
     '''
     switzerland = """
-    SELECT x.photo_id, x.user_nsid, x.download_url, x.lat, x.lng
+    SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
     FROM data_100m as x
-    JOIN natura2000_projected as y
+    JOIN wildkirchli as y
     ON ST_WITHIN(x.geometry, y.geom)
     WHERE x.georeferenced = 1
     """
@@ -317,16 +379,16 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    data_source = 1 #1 = PostGIS database; 2 = Flickr API
+    data_source = 2 #1 = PostGIS database; 2 = Flickr API
     db_query = switzerland
-    flickr_bbox = bbox_wildkirchli
-    filter_authors_switch = True
-    max_lng_extend = 0.05
-    max_lat_extend = 0.05
+    flickr_bbox = bbox_small
+    filter_authors_switch = False
+    max_lng_extend = 0.05 #change / neglect when running on Cluster
+    max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
-    min_motives_per_cluster = 3 #None if this step shall be skipped
+    min_motives_per_cluster = None #None if this step shall be skipped
     ################################################################
     ################################################################
     with warnings.catch_warnings():
@@ -504,7 +566,7 @@ if __name__ == '__main__':
             ...
         '''
         #dictionary with cluster id key and its score as value
-        cluster_scores = cluster_score(subset_dfs)
+        cluster_scores = calc_cluster_scores(subset_dfs)
         '''
         6. Dumping all dataframes to pickle
         in the project folder
