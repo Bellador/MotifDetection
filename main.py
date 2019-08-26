@@ -165,6 +165,13 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write("</head>\n")
             f.write("<body>\n")
             f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
+            f.write(f"<h2>Cluster score: </h2>")
+            f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
+            f.write(f"<h3>      mean_subcluster_size: {cluster_scores[index]['mean_subcluster_size']}</h3>")
+            f.write(f"<h3>      mean_timespan: {cluster_scores[index]['mean_timespan']}</h3>")
+            f.write(f"<h3>      mean_unique_authors: {cluster_scores[index]['mean_unique_authors']}</h3>")
+            f.write(f"<h3>      final_score: {cluster_scores[index]['final_score']}</h3>")
+            f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
             n_clusters = sum([1 for c in cluster_labels if c != -1])
@@ -313,13 +320,23 @@ if __name__ == '__main__':
     Database queries:
     
     '''
-    switzerland = """
-    SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
-    FROM data_100m as x
-    JOIN wildkirchli as y
-    ON ST_WITHIN(x.geometry, y.geom)
-    WHERE x.georeferenced = 1
-    """
+    switzerland_query = """
+        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        FROM data_100m as x
+        JOIN switzerland as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        """
+
+    wildkirchli_query = """
+        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        FROM data_100m as x
+        JOIN wildkirchli as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        AND x.date_uploaded >= 1357030357
+        AND x.date_uploaded <= 1420070400
+        """
     # AND x.date_uploaded >= 1262304000
     # AND x.date_uploaded <= 1420070400
     #unixtimestamps for 2010 - 2015
@@ -364,7 +381,7 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 100 #100
+        'network_threshold': 100
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -379,8 +396,8 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    data_source = 2 #1 = PostGIS database; 2 = Flickr API
-    db_query = switzerland
+    data_source = 1 #1 = PostGIS database; 2 = Flickr API
+    db_query = wildkirchli_query
     flickr_bbox = bbox_small
     filter_authors_switch = False
     max_lng_extend = 0.05 #change / neglect when running on Cluster
