@@ -1,6 +1,7 @@
 import psycopg2
 import datetime
 import os
+import sys
 
 class DbQuerier:
     path_db_psw = "C:/Users/mhartman/Documents/100mDataset/db_password.txt"
@@ -31,6 +32,7 @@ class DbQuerier:
                 return conn
             except:
                 print("Wrong password. Try again.")
+                sys.exit(1)
 
     def export_query_to_csv(self):
         with self.conn.cursor() as cursor:

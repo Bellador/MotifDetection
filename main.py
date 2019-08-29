@@ -165,10 +165,21 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write("</head>\n")
             f.write("<body>\n")
             f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
+            f.write(f"<h2>Used parameters:</h2>")
+            f.write(f"<h3>Data_source: PostgresqlDB</h3>")
+            f.write(f"<h3>     SQL_query: {db_query}</h3>")
+            f.write(f"<h3>Filter - Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
+            f.write(f"<h3>Clustering - Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(f"<h3>CV - Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write(f"<h3>Motif network analysis - Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
+            f.write(f"<h3>overall_mean_nr_subclusters: {round(cluster_scores['overall_mean_nr_subclusters'], 3)}</h3>")
+            f.write(f"<h3>overall_mean_subcluster_size: {round(cluster_scores['overall_mean_subcluster_size'], 3)}</h3>")
+            f.write(f"<h3>overall_mean_unique_authors: {round(cluster_scores['overall_mean_unique_authors'], 3)}</h3>")
             f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
             f.write(f"<h3>      mean_subcluster_size: {cluster_scores[index]['mean_subcluster_size']}</h3>")
-            f.write(f"<h3>      mean_timespan: {cluster_scores[index]['mean_timespan']}</h3>")
+            # f.write(f"<h3>      mean_timespan: {cluster_scores[index]['mean_timespan']}</h3>")
             f.write(f"<h3>      mean_unique_authors: {cluster_scores[index]['mean_unique_authors']}</h3>")
             f.write(f"<h3>      final_score: {cluster_scores[index]['final_score']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
@@ -208,18 +219,37 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write("</head>\n")
             f.write("<body>\n")
             f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
+            f.write(f"<h2>Used parameters: </h2>")
+            f.write(f"<h3>Data_source: FlickrAPI</h3>")
+            f.write(f"<h3>  Bounding box: {flickr_bbox}</h3>")
+            f.write(f"<h3>Filter - Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
+            f.write(f"<h3>Clustering - Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(f"<h3>CV - Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write(f"<h3>Motif network analysis - Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
+            f.write(f"<h2>Cluster score: </h2>")
+            f.write(f"<h3>overall_mean_nr_subclusters: {round(cluster_scores['overall_mean_nr_subclusters'], 3)}</h3>")
+            f.write(f"<h3>overall_mean_subcluster_size: {round(cluster_scores['overall_mean_subcluster_size'], 3)}</h3>")
+            f.write(f"<h3>overall_mean_unique_authors: {round(cluster_scores['overall_mean_unique_authors'], 3)}</h3>")
+            f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
+            f.write(f"<h3>      mean_subcluster_size: {cluster_scores[index]['mean_subcluster_size']}</h3>")
+            # f.write(f"<h3>      mean_timespan: {cluster_scores[index]['mean_timespan']}</h3>")
+            f.write(f"<h3>      mean_unique_authors: {cluster_scores[index]['mean_unique_authors']}</h3>")
+            f.write(f"<h3>      final_score: {cluster_scores[index]['final_score']}</h3>")
+            f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
             n_clusters = sum([1 for c in cluster_labels if c != -1])
-
             cluster_dict = {}
+
             for label in cluster_labels:
                 cluster_dict[label] = []
 
             # append media objects to correct cluster
             for i, row in dataframe.iterrows():
+                image_url = row['download_url']
                 cluster_label = row['multi_cluster_label']
-                cluster_dict[cluster_label].append(i)
+                cluster_dict[cluster_label].append((i, image_url))
 
             for counter, (k, v) in enumerate(cluster_dict.items()):
                 f.write(f'<h2>Cluster {k}</h2>\n')
@@ -261,15 +291,16 @@ def calc_cluster_scores(dataset):
 
             #---------------------------------------------------------------------------
             #calculate the subcluster timespans and take the mean
-            timespans = []
-            for label in cluster_labels_no_noise:
-                timestamps = sb_data.loc[sb_data['multi_cluster_label'] == label]['date_uploaded']
-                sordted_timestamps = list(timestamps.sort_values(ascending=False))
-                try:
-                    timespans.append(int(sordted_timestamps[0]) - int(sordted_timestamps[-1]))
-                except Exception as e:
-                    mean_timespan = None
-            mean_timespan = statistics.mean(timespans)
+
+            # timespans = []
+            # for label in cluster_labels_no_noise:
+            #     timestamps = sb_data.loc[sb_data['multi_cluster_label'] == label]['date_uploaded']
+            #     sordted_timestamps = list(timestamps.sort_values(ascending=False))
+            #     try:
+            #         timespans.append(int(sordted_timestamps[0]) - int(sordted_timestamps[-1]))
+            #     except Exception as e:
+            #         mean_timespan = None
+            # mean_timespan = statistics.mean(timespans)
             #---------------------------------------------------------------------------
             #calculate number of unique authors per subcluster and take the mean
             count_unique_auhtors = []
@@ -281,38 +312,57 @@ def calc_cluster_scores(dataset):
             # Add values to dictionary
             cluster_scores[sb_name] = {'nr_subclusters': nr_subclusters,
                                        'mean_subcluster_size': mean_subcluster_size,
-                                       'mean_timespan': mean_timespan,
+                                       # 'mean_timespan': mean_timespan,
                                        'mean_unique_authors': mean_unique_authors,
                                        'final_score': final_score}
         else:
             final_score = 0
             cluster_scores[sb_name] = {'nr_subclusters': 0,
                                        'mean_subcluster_size': 0,
-                                       'mean_timespan': 0,
+                                       # 'mean_timespan': 0,
                                        'mean_unique_authors': 0,
                                        'final_score': final_score}
     # ---------------------------------------------------------------------------
     # Calculate the final subcluster scores based on the subscore of each (their range) relativ to one another
     overall_mean_nr_subclusters = []
     overall_mean_subcluster_size = []
-    overall_mean_timespan = []
+    # overall_mean_timespan = []
     overall_mean_unique_authors = []
 
     for k, v in cluster_scores.items():
         overall_mean_nr_subclusters.append(v['nr_subclusters'])
         overall_mean_subcluster_size.append(v['mean_subcluster_size'])
-        overall_mean_timespan.append(v['mean_timespan'])
+        # overall_mean_timespan.append(v['mean_timespan'])
         overall_mean_unique_authors.append(v['mean_unique_authors'])
 
     overall_mean_nr_subclusters = statistics.mean(overall_mean_nr_subclusters)
     overall_mean_subcluster_size = statistics.mean(overall_mean_subcluster_size)
-    overall_mean_timespan = statistics.mean(overall_mean_timespan)
+    # overall_mean_timespan = statistics.mean(overall_mean_timespan)
     overall_mean_unique_authors = statistics.mean(overall_mean_unique_authors)
+
+    if overall_mean_nr_subclusters == 0:
+        overall_mean_nr_subclusters = 1
+    if overall_mean_subcluster_size == 0:
+        overall_mean_subcluster_size = 1
+    # if overall_mean_timespan == 0:
+    #     overall_mean_timespan = 1
+    if overall_mean_unique_authors == 0:
+        overall_mean_unique_authors = 1
 
     for k, v in cluster_scores.items():
         if v['final_score'] != 0:
-            v['final_score'] = round((v['nr_subclusters']/overall_mean_nr_subclusters) + (v['mean_subcluster_size']/overall_mean_subcluster_size) \
-                               + (1 / (v['mean_timespan']/overall_mean_timespan)) + (v['mean_unique_authors']/overall_mean_unique_authors), 2)
+            try:
+                v['final_score'] = round((v['nr_subclusters']/overall_mean_nr_subclusters) + (v['mean_subcluster_size']/overall_mean_subcluster_size) \
+                                   + (v['mean_unique_authors']/overall_mean_unique_authors), 4) * 100 #(1 / (v['mean_timespan']/overall_mean_timespan)) +
+            except Exception as e:
+                print(f"Cluster score error: {e}")
+                print(f"Final score set to 0")
+                v['final_score'] = 0
+
+    cluster_scores['overall_mean_nr_subclusters'] = overall_mean_nr_subclusters
+    cluster_scores['overall_mean_subcluster_size'] = overall_mean_subcluster_size
+    cluster_scores['overall_mean_unique_authors'] = overall_mean_unique_authors
+
     return cluster_scores
 
 if __name__ == '__main__':
@@ -320,6 +370,14 @@ if __name__ == '__main__':
     Database queries:
     
     '''
+    natura2000_query = """
+            SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+            FROM data_100m as x
+            JOIN natura2000_projected as y
+            ON ST_WITHIN(x.geometry, y.geom)
+            WHERE x.georeferenced = 1
+            """
+
     switzerland_query = """
         SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -334,8 +392,6 @@ if __name__ == '__main__':
         JOIN wildkirchli as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
-        AND x.date_uploaded >= 1357030357
-        AND x.date_uploaded <= 1420070400
         """
     # AND x.date_uploaded >= 1262304000
     # AND x.date_uploaded <= 1420070400
@@ -359,8 +415,8 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 3,
-        'min_samples': 3
+        'min_cluster_size': 2,
+        'min_samples': 2
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
@@ -400,6 +456,7 @@ if __name__ == '__main__':
     db_query = wildkirchli_query
     flickr_bbox = bbox_small
     filter_authors_switch = False
+    filter_spatial_extend = False
     max_lng_extend = 0.05 #change / neglect when running on Cluster
     max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
@@ -411,7 +468,8 @@ if __name__ == '__main__':
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
-        project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
+        # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
+        project_name = 'wildkirchli'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -459,23 +517,24 @@ if __name__ == '__main__':
         to far spread clusters do not support the existance of motives
         and are therefor not further considered
         '''
-        #keys that need to be deleted after the iteration over the dictionary
-        del_keys = []
-        print('**' * 30)
-        print("Checking subcluster spatial extend...")
-        for label, subset in subset_dfs.items():
-            check_ok = check_coordinate_extend(label, subset)
-            # True means the spatial extend is in the boundary limits
-            if check_ok:
-                continue
-            # False, spatial extend of subclaster too large
-            elif not check_ok:
-                del_keys.append(label)
-        #delete filtered subcluster keys
-        print(f"{len(del_keys)} clusters have a too large spatial extend and will be removed...")
-        for key in del_keys:
-            del subset_dfs[key]
-        print('**' * 30)
+        if filter_spatial_extend:
+            #keys that need to be deleted after the iteration over the dictionary
+            del_keys = []
+            print('**' * 30)
+            print("Checking subcluster spatial extend...")
+            for label, subset in subset_dfs.items():
+                check_ok = check_coordinate_extend(label, subset)
+                # True means the spatial extend is in the boundary limits
+                if check_ok:
+                    continue
+                # False, spatial extend of subclaster too large
+                elif not check_ok:
+                    del_keys.append(label)
+            #delete filtered subcluster keys
+            print(f"{len(del_keys)} clusters have a too large spatial extend and will be removed...")
+            for key in del_keys:
+                del subset_dfs[key]
+            print('**' * 30)
         '''
         Conditionally apply
         Author filtering
@@ -567,17 +626,17 @@ if __name__ == '__main__':
                                 exclude = False
                 if exclude:
                     del_keys.append(cluster_name)
-        #delete clusters below the minimum size
-        for key in del_keys:
-            del subset_dfs[key]
-        final_len_after = len(subset_dfs.keys())
-        print(f"Removed {final_len_before-final_len_after} of {final_len_before} sub-clusters")
-        print(f"Remaining: {final_len_after}")
+            #delete clusters below the minimum size
+            for key in del_keys:
+                del subset_dfs[key]
+            final_len_after = len(subset_dfs.keys())
+            print(f"Removed {final_len_before-final_len_after} of {final_len_before} sub-clusters")
+            print(f"Remaining: {final_len_after}")
         '''
         6. Cluster Scores
         calculate and evaluate clusters based on certain parameters related to the included sub-clusters:
             - amount of authors
-            - timespan between oldest and newest media object
+            - timespan between oldest and newest media object (temporarily neglected)
             - nr. of sub-clusters
             - amount of clsutered images compared to noise media objects
             ...
@@ -603,6 +662,6 @@ if __name__ == '__main__':
         Plot
         resulting image motive clusters
         '''
-        for label, subset in subset_dfs.items():
-            plot_clusters(label, subset)
+        #for label, subset in subset_dfs.items():
+        #    plot_clusters(label, subset)
         print("Finished.")
