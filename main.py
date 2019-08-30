@@ -415,13 +415,15 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 2,
-        'min_samples': 2
+        'min_cluster_size': 10,
+        'min_samples': 10,
+        'cluster_selection_method': 'leaf' #default 'eom'
     }
     cluster_params_HDBSCAN_multi = {
         'algorithm': 'HDBSCAN',
         'min_cluster_size': 2,
-        'min_samples': 2
+        'min_samples': 2,
+        'cluster_selection_method': 'leaf'  # default 'eom'
     }
     cluster_params_DBSCAN = {
         'algorithm': 'DBSCAN',
@@ -469,7 +471,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'wildkirchli'
+        project_name = 'wildkirchli_new_score'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -482,9 +484,27 @@ if __name__ == '__main__':
         check from which source data will be loaded
         '''
         if data_source == 1:
-            print("About to import data from database...")
-            db_obj = DbQuerier(db_query, project_name)
-            data_path = db_obj.csv_output_path
+            to_dbquery = True
+            data_path = None
+            #check if metadatafile already exists
+            # r=root, d=directories, f = files
+            try:
+                for r, d, f in os.walk(project_path):
+                    for file in f:
+                        if file.endswith('.csv'):
+                            print("Metadata for this db query already exists.")
+                            print("Skipping invocation of DbQuerier.")
+                            print("--"*30)
+                            to_dbquery = False
+                            data_path = os.path.join(r, file)
+            except Exception as e:
+                print(f"Error: {e}")
+
+            if to_dbquery:
+                print("About to import data from database...")
+                db_obj = DbQuerier(db_query, project_name)
+                data_path = db_obj.csv_output_path
+
         elif data_source == 2:
             print("About to import data from Flickr API...")
             flickr_obj = FlickrQuerier(project_name, bbox=flickr_bbox)
