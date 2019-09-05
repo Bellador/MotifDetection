@@ -39,8 +39,8 @@ class ImageSimilarityAnalyser:
         end = time.time()
         print(f"Duration: {end - start} seconds")
 
-        with open(path_performance_log, 'a') as log:
-            log.write(f"{self.algorithm}, processed files: {self.nr_images}, duration: {end-start}\n")
+        # with open(path_performance_log, 'a') as log:
+        #     log.write(f"{self.algorithm}, processed files: {self.nr_images}, duration: {end-start}\n")
 
         # self.visualise_matches('img9', 'img10', top_matches=20)
         # self.visualise_matches('img8', 'img9', top_matches=20)
@@ -72,14 +72,21 @@ class ImageSimilarityAnalyser:
             not_found = 0
             for counter, (img_id, url) in enumerate(zip(ids, img_urls), 1):
                 try:
+                    '''
+                    HERE FIX URL <MISSING SCHEMA> ERROR
+                    append 'http:' if not already present
+                    '''
+                    if url[:2] == '//':
+                        url = 'http:' + url
                     img = url_to_image(url)
                     # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
                     image_objects[img_id] = img
                     feature_dict[img_id] = {}
                     print(f'\r{counter} of {nr_images} images', end='')
                 except Exception as e:
+                    print(f"Image error")
+                    print(f"{e} - url: {url}")
                     not_found += 1
-                    # print(f"image {img_id} not found")
             print(f"\nNot found images: {not_found}")
 
         elif self.data_source == 2:
@@ -141,7 +148,6 @@ class ImageSimilarityAnalyser:
         - Create pandas dataframe to store the matching output
         of every image (n) with the set in a 2D matrix of n^2 entries
         '''
-        df_pickle_path = "C:/Users/mhartman/Documents/100mDataset/"
         self.lowe_ratio = lowe_ratio
         #one to store the matches, the other for the later computed similarity scores
         df = pd.DataFrame(columns=self.image_objects.keys(), index=self.image_objects.keys())
@@ -440,6 +446,6 @@ path_IMAGES_test = "C:/Users/mhartman/Documents/100mDataset/wildkirchli_images_t
 path_IMAGES_motives = "C:/Users/mhartman/Documents/100mDataset/wildkirchli_images_motives"
 path_IMAGES_noise = "C:/Users/mhartman/Documents/100mDataset/wildkirchli_images_noise"
 path_pickle_similarity = "C:/Users/mhartman/Documents/100mDataset/df_similarity_pickles/"
-path_performance_log = "C:/Users/mhartman/Documents/100mDataset/performance_log.txt"
+# path_performance_log = "/home/debian/MotiveDetection/performance_log.txt"
 
 # inst1 = ImageSimilarityAnalysis(path_IMAGES_motives, 'SURF', pickle=False)

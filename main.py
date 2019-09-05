@@ -330,15 +330,17 @@ def calc_cluster_scores(dataset):
     overall_mean_unique_authors = []
 
     for k, v in cluster_scores.items():
-        overall_mean_nr_subclusters.append(v['nr_subclusters'])
-        overall_mean_subcluster_size.append(v['mean_subcluster_size'])
-        # overall_mean_timespan.append(v['mean_timespan'])
-        overall_mean_unique_authors.append(v['mean_unique_authors'])
+        #Only consider HDBSCAN clusters that consist of motifs!
+        if v['final_score'] == None:
+            overall_mean_nr_subclusters.append(v['nr_subclusters'])
+            overall_mean_subcluster_size.append(v['mean_subcluster_size'])
+            # overall_mean_timespan.append(v['mean_timespan'])
+            overall_mean_unique_authors.append(v['mean_unique_authors'])
 
-    overall_mean_nr_subclusters = statistics.mean(overall_mean_nr_subclusters)
-    overall_mean_subcluster_size = statistics.mean(overall_mean_subcluster_size)
+    overall_mean_nr_subclusters = round(statistics.mean(overall_mean_nr_subclusters),2)
+    overall_mean_subcluster_size = round(statistics.mean(overall_mean_subcluster_size),2)
     # overall_mean_timespan = statistics.mean(overall_mean_timespan)
-    overall_mean_unique_authors = statistics.mean(overall_mean_unique_authors)
+    overall_mean_unique_authors = round(statistics.mean(overall_mean_unique_authors),2)
 
     if overall_mean_nr_subclusters == 0:
         overall_mean_nr_subclusters = 1
@@ -352,8 +354,8 @@ def calc_cluster_scores(dataset):
     for k, v in cluster_scores.items():
         if v['final_score'] != 0:
             try:
-                v['final_score'] = round((v['nr_subclusters']/overall_mean_nr_subclusters) + (v['mean_subcluster_size']/overall_mean_subcluster_size) \
-                                   + (v['mean_unique_authors']/overall_mean_unique_authors), 4) * 100 #(1 / (v['mean_timespan']/overall_mean_timespan)) +
+                v['final_score'] = round(((v['nr_subclusters']/overall_mean_nr_subclusters) + (v['mean_subcluster_size']/overall_mean_subcluster_size) \
+                                   + (v['mean_unique_authors']/overall_mean_unique_authors)*100), 2) #(1 / (v['mean_timespan']/overall_mean_timespan)) +
             except Exception as e:
                 print(f"Cluster score error: {e}")
                 print(f"Final score set to 0")
@@ -371,12 +373,12 @@ if __name__ == '__main__':
     
     '''
     natura2000_query = """
-            SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
-            FROM data_100m as x
-            JOIN natura2000_projected as y
-            ON ST_WITHIN(x.geometry, y.geom)
-            WHERE x.georeferenced = 1
-            """
+        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        FROM data_100m as x
+        JOIN natura2000_projected as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        """
 
     switzerland_query = """
         SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
@@ -386,10 +388,27 @@ if __name__ == '__main__':
         WHERE x.georeferenced = 1
         """
 
+    switzerland_old_query = """
+        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        FROM data_100m as x
+        JOIN switzerland as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        AND new_data = 0
+        """
+
     wildkirchli_query = """
         SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
         JOIN wildkirchli as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        """
+
+    loewendenkmal_query = """
+        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        FROM data_100m as x
+        JOIN loewendenkmal as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
@@ -455,7 +474,7 @@ if __name__ == '__main__':
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
     data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = wildkirchli_query
+    db_query = natura2000_query
     flickr_bbox = bbox_small
     filter_authors_switch = False
     filter_spatial_extend = False
@@ -471,7 +490,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'wildkirchli_new_score'
+        project_name = 'eu_natura'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
