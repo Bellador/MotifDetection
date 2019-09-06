@@ -30,6 +30,16 @@ class ImageSimilarityAnalyser:
         self.image_objects, self.feature_dict, self.nr_images = self.file_loader()
         print("--" * 30)
         print("Load images - done.")
+        if self.algorithm == 'SIFT':
+            self.alg_obj = cv2.xfeatures2d.SIFT_create(contrastThreshold=0.04, edgeThreshold=10)
+
+        elif self.algorithm == 'SURF':
+            self.alg_obj = cv2.xfeatures2d.SURF_create()
+
+        elif self.algorithm == 'ORB':
+            self.alg_obj = cv2.ORB_create(nfeatures=1500)
+
+        print(f"Using algorithm {self.algorithm}")
         self.compute_keypoints()
         print("--" * 30)
         print("Compute image keypoints - done.")
@@ -58,7 +68,9 @@ class ImageSimilarityAnalyser:
             # download the image, convert it to a NumPy array, and then read
             # it into OpenCV format
             # content = urllib.request.urlopen(url, context=ssl._create_unverified_context())
-            content = self.session.get(url, verify=False).content
+            content = self.session.get(url, verify=False)
+            content.raise_for_status()
+            content = content.content
             image = np.asarray(bytearray(content), dtype="uint8")
             image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
             # return the image
@@ -80,14 +92,12 @@ class ImageSimilarityAnalyser:
                     '''
                     if url[:2] == '//':
                         url = 'http:' + url
-                    img = url_to_image(url)
                     # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-                    image_objects[img_id] = img
+                    image_objects[img_id] = url_to_image(url)
                     feature_dict[img_id] = {}
                     print(f'\r{counter} of {nr_images} images', end='')
                 except Exception as e:
-                    print(f"Image error")
-                    print(f"{e} - url: {url}")
+                    print(f"{e} - Image error url: {url}")
                     not_found += 1
             print(f"\nNot found images: {not_found}")
 
@@ -121,22 +131,13 @@ class ImageSimilarityAnalyser:
 
         Algorithms: SIFT, SURF, ORB
         '''
-        if self.algorithm == 'SIFT':
-            alg = cv2.xfeatures2d.SIFT_create(contrastThreshold=0.04, edgeThreshold=10)
-
-        elif self.algorithm == 'SURF':
-            alg = cv2.xfeatures2d.SURF_create()
-
-        elif self.algorithm == 'ORB':
-            alg = cv2.ORB_create(nfeatures=1500)
-
-        print(f"Using algorithm {self.algorithm}")
 
         for obj in self.image_objects:
             #the None defines if a mask shall be used or not
             try:
-                keypoints, descriptors = alg.detectAndCompute(self.image_objects[obj], None)
-            except:
+                keypoints, descriptors = self.alg_obj.detectAndCompute(self.image_objects[obj], None)
+            except Exception as e:
+                print(f"{e}; Compute_keypoint error")
                 keypoints = []
                 descriptors = []
             self.feature_dict[obj]['kp'] = keypoints
@@ -170,7 +171,7 @@ class ImageSimilarityAnalyser:
                         value = bf.knnMatch(self.feature_dict[index]['ds'], self.feature_dict[column]['ds'], k=2)
                         df.set_value(index, column, value)
                     except Exception as e:
-                        print(f"{e} occurred during image matching: NaN value set")
+                        print(f"{e} match_keypoints error: NaN value set")
                         df.set_value(index, column, np.nan)
 
         print("Populated dataframe with image matches - done.")
