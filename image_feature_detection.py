@@ -13,10 +13,11 @@ import ssl
 class ImageSimilarityAnalyser:
     score_same_image = 0
 
-    def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False):
+    def __init__(self, project_name, data_source, session, algorithm_params, subset_df, pickle=False):
         start = time.time()
         self.project_name = project_name
         self.data_source = data_source
+        self.session = session
         self.algorithm_params = algorithm_params
         self.subset_df = subset_df
         self.project_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name)
@@ -56,8 +57,9 @@ class ImageSimilarityAnalyser:
         def url_to_image(url):
             # download the image, convert it to a NumPy array, and then read
             # it into OpenCV format
-            resp = urllib.request.urlopen(url, context=ssl._create_unverified_context())
-            image = np.asarray(bytearray(resp.read()), dtype="uint8")
+            # content = urllib.request.urlopen(url, context=ssl._create_unverified_context())
+            content = self.session.get(url, verify=False).content
+            image = np.asarray(bytearray(content), dtype="uint8")
             image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
             # return the image
             return image

@@ -9,6 +9,7 @@ import numpy as np
 import statistics
 import warnings
 import datetime
+import requests
 import os
 import sys
 
@@ -603,12 +604,16 @@ if __name__ == '__main__':
          -> adding new columns (series in Pandas) with score values for each media object
          -> Possible cv algorithms: SIFT, SURF, ORB
         '''
+        # Create session which will be used for entire process
+        print("Create session")
+        session = requests.Session()
+        session.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"}
+        requests.packages.urllib3.disable_warnings()  # turn off SSL warnings
         cluster_obj_dict = {}
         for index, (label, subset) in enumerate(subset_dfs.items(), 1):
             print("##" * 30)
             print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {label}")
-            cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params,
-                                             subset)
+            cv_obj = ImageSimilarityAnalyser(project_name, data_source, session, image_similarity_params, subset)
             subset_dfs[label] = cv_obj.subset_df
 
         print("Image analysis for all spatial sub-clusters - done.")
