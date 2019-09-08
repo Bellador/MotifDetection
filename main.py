@@ -3,6 +3,8 @@ from db_querier import DbQuerier
 from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalyser
 from network_analysis import NetworkAnalyser
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from random import randint
 import matplotlib.pyplot as plt
 import numpy as np
@@ -608,6 +610,12 @@ if __name__ == '__main__':
         print("Create session")
         session = requests.Session()
         session.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"}
+        # change retry settings to overcome HTTPSConnectionPool error - target server refuses connections due to many per time
+        retry = Retry(connect=5, backoff_factor=1)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+
         requests.packages.urllib3.disable_warnings()  # turn off SSL warnings
         cluster_obj_dict = {}
         for index, (label, subset) in enumerate(subset_dfs.items(), 1):
