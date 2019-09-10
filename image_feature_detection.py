@@ -97,7 +97,7 @@ class ImageSimilarityAnalyser:
                     feature_dict[img_id] = {}
                     print(f'\r{counter} of {nr_images} images', end='')
                 except Exception as e:
-                    print(f"{e} - Image error url: {url}")
+                    print(f"{e}")
                     not_found += 1
             print(f"\nNot found images: {not_found}")
 
