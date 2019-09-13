@@ -3,15 +3,13 @@ from db_querier import DbQuerier
 from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalyser
 from network_analysis import NetworkAnalyser
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+
 from random import randint
 import matplotlib.pyplot as plt
 import numpy as np
 import statistics
 import warnings
 import datetime
-import requests
 import os
 import sys
 
@@ -542,6 +540,7 @@ if __name__ == '__main__':
         original_db_size = cluster_obj.original_df_size
         cluster_df = cluster_obj.df
         unique_cluster_lables = cluster_obj.unique_labels
+        del cluster_obj
         '''
         the dataframe will be need to be split into different dataframes because the added features
         will vary according to the clusters!
@@ -607,22 +606,13 @@ if __name__ == '__main__':
          -> Possible cv algorithms: SIFT, SURF, ORB
         '''
         # Create session which will be used for entire process
-        print("Create session")
-        session = requests.Session()
-        session.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"}
-        # change retry settings to overcome HTTPSConnectionPool error - target server refuses connections due to many per time
-        retry = Retry(connect=5, backoff_factor=1)
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
-
-        requests.packages.urllib3.disable_warnings()  # turn off SSL warnings
         cluster_obj_dict = {}
         for index, (label, subset) in enumerate(subset_dfs.items(), 1):
             print("##" * 30)
             print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {label}")
-            cv_obj = ImageSimilarityAnalyser(project_name, data_source, session, image_similarity_params, subset)
+            cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset)
             subset_dfs[label] = cv_obj.subset_df
+            del cv_obj
 
         print("Image analysis for all spatial sub-clusters - done.")
         '''
@@ -654,6 +644,7 @@ if __name__ == '__main__':
             print(f"\rNetwork analysis of subset: {label}", end='')
             net_analysis = NetworkAnalyser(label, subset, threshold=image_similarity_params['network_threshold'])
             subset_dfs[label] = net_analysis.new_dataframe
+            del net_analysis
         '''
         5.1
         Check the final sub-cluster (exc. Noise) sizes to be above the defined
