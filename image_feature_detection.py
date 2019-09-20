@@ -7,8 +7,6 @@ import datetime
 import math
 import re
 import time
-import ssl
-import urllib.request
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -58,6 +56,8 @@ class ImageSimilarityAnalyser:
         # self.visualise_matches('img8', 'img10', top_matches=20)
         print("Adding new features to dataframe")
         self.add_features()
+        del self.alg_obj
+        del self.image_objects
         # self.plot_results(top_comparisons=20, top_matches=20)
         print("--" * 30)
         print("--" * 30)
@@ -106,13 +106,23 @@ class ImageSimilarityAnalyser:
                         # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
                         image_objects[img_id] = url_to_image(url, session)
                         feature_dict[img_id] = {}
+                        raise requests.exceptions.ConnectionError
                         print(f'\r{counter} of {nr_images} images', end='')
                     except Exception as e:
                         print(f"{e}")
+                        if isinstance(e, requests.exceptions.ConnectionError):
+                            print("CONNECTIONERROR - TRYING OTHER DNS REQUEST")
+                            hostname = "google.com"  # example
+                            response = os.system("ping -c 1 -w2 " + hostname + " > /dev/null 2>&1")
+                            # and then check the response...
+                            if response == 0:
+                                print(hostname, ' is up!')
+                            else:
+                                print(hostname, ' is down!')
                         not_found += 1
                 print(f"\nNot found images: {not_found}")
                 if not_found == len(ids):
-                    amount = 180
+                    amount = 30
                     print(f"Sleep {amount}s due to all images raised errors")
                     time.sleep(amount)
 

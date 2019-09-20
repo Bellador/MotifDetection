@@ -12,6 +12,8 @@ import warnings
 import datetime
 import os
 import sys
+import gc
+import json
 
 def plot_clusters(subset_name, subset):
     unique_labels = subset.multi_cluster_label.unique()
@@ -126,7 +128,7 @@ def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_sc
         pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
         if not os.path.exists(pickle_path):
             os.makedirs(pickle_path)
-        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_scores[index]['final_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                         image_params['algorithm'], image_params['lowe_ratio'], index, datetime.datetime.now())
         dataframe.to_pickle(os.path.join(pickle_path, name))
         print(f"Pickling: {name}")
@@ -153,7 +155,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
     else:
         print(f"Project folder {folder_name} exists already.")
 
-    file_name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.html'.format(cluster_scores[index]['final_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+    file_name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.html'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                          image_params['algorithm'], image_params['lowe_ratio'], index,
                                          datetime.datetime.now())
     #Database
@@ -175,14 +177,9 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>Motif network analysis - Threshold: {image_params['network_threshold']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
-            f.write(f"<h3>overall_mean_nr_subclusters: {round(cluster_scores['overall_mean_nr_subclusters'], 3)}</h3>")
-            f.write(f"<h3>overall_mean_subcluster_size: {round(cluster_scores['overall_mean_subcluster_size'], 3)}</h3>")
-            f.write(f"<h3>overall_mean_unique_authors: {round(cluster_scores['overall_mean_unique_authors'], 3)}</h3>")
             f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
-            f.write(f"<h3>      mean_subcluster_size: {cluster_scores[index]['mean_subcluster_size']}</h3>")
-            # f.write(f"<h3>      mean_timespan: {cluster_scores[index]['mean_timespan']}</h3>")
-            f.write(f"<h3>      mean_unique_authors: {cluster_scores[index]['mean_unique_authors']}</h3>")
-            f.write(f"<h3>      final_score: {cluster_scores[index]['final_score']}</h3>")
+            f.write(f"<h3>      best_motif_label: {cluster_scores[index]['best_motif_label']}</h3>")
+            f.write(f"<h3>      best_motif_score: {cluster_scores[index]['best_motif_score']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
@@ -229,14 +226,9 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>Motif network analysis - Threshold: {image_params['network_threshold']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
-            f.write(f"<h3>overall_mean_nr_subclusters: {round(cluster_scores['overall_mean_nr_subclusters'], 3)}</h3>")
-            f.write(f"<h3>overall_mean_subcluster_size: {round(cluster_scores['overall_mean_subcluster_size'], 3)}</h3>")
-            f.write(f"<h3>overall_mean_unique_authors: {round(cluster_scores['overall_mean_unique_authors'], 3)}</h3>")
             f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
-            f.write(f"<h3>      mean_subcluster_size: {cluster_scores[index]['mean_subcluster_size']}</h3>")
-            # f.write(f"<h3>      mean_timespan: {cluster_scores[index]['mean_timespan']}</h3>")
-            f.write(f"<h3>      mean_unique_authors: {cluster_scores[index]['mean_unique_authors']}</h3>")
-            f.write(f"<h3>      final_score: {cluster_scores[index]['final_score']}</h3>")
+            f.write(f"<h3>      best_motif_label: {cluster_scores[index]['best_motif_label']}</h3>")
+            f.write(f"<h3>      best_motif_score: {cluster_scores[index]['best_motif_score']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
@@ -255,7 +247,6 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             for counter, (k, v) in enumerate(cluster_dict.items()):
                 f.write(f'<h2>Cluster {k}</h2>\n')
                 f.write(f'<ul>\n')
-
                 for id in v:
                     img_path = os.path.join(project_path, f'images_{project_name}', str(id) + '.jpg').replace('\\', '/')
                     f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
@@ -276,96 +267,87 @@ def calc_cluster_scores(dataset):
     '''
     cluster_scores = {}
     for sb_name, sb_data in dataset.items():
-        final_score = None
         #nr of subclusters
+        cluster_scores[sb_name] = {}
         cluster_labels = sb_data['multi_cluster_label'].unique()
         cluster_labels_no_noise = [label for label in cluster_labels if label != -1]
         nr_subclusters = len(cluster_labels_no_noise)
+
         if nr_subclusters != 0:
-            #--------------------------------------------------------------------------
-            #calculate average cluster size
-            sizes = []
-            for label in cluster_labels_no_noise:
-                labels = sb_data[sb_data['multi_cluster_label'] == label]
-                sizes.append(len(labels.index.values))
-            mean_subcluster_size = statistics.mean(sizes)
+            for motif_label in cluster_labels_no_noise:
+                cluster_scores[sb_name][motif_label] = {}
+                #--------------------------------------------------------------------------
+                #calculate cluster size
+                labels = sb_data[sb_data['multi_cluster_label'] == motif_label]
+                motif_size = len(labels.index.values)
+                # --------------------------------------------------------------------------
+                # calculate spatial extend
+                # defined as the sum of: (lat_max - lat_min) + (lng_max - lng_min)
+                latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
+                longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
+                sorted_latitudes = list(latitudes.sort_values(ascending=False))
+                sorted_longitudes = list(longitudes.sort_values(ascending=False))
+                extend_latitudes = int(sorted_latitudes[0]) - int(sorted_latitudes[-1])
+                extend_longitudes = int(sorted_longitudes[0]) - int(sorted_longitudes[-1])
+                spatial_extend = extend_latitudes + extend_longitudes
+                #if really 0 then the spatial extend is set to the lowest resolution of x and y values in the dataset
+                if spatial_extend == 0:
+                    spatial_extend = 0.00001
+                # --------------------------------------------------------------------------
+                # calculate the subcluster timespans
+                # defined thresholds for timespan between oldest and newest image of a cluster:
+                # less 1 day (86400s) -> bulk upload from single person, or event documented by many
+                # to check which is true (one or more authors) check unique authors in conjunction:
+                # Factor: single author (bulk upload) -> 0.5
+                # Factor: multiple authors (bulk event upload) -> 0.75
+                timestamps = sb_data.loc[sb_data['multi_cluster_label'] == motif_label]['date_uploaded']
+                sordted_timestamps = list(timestamps.sort_values(ascending=False))
+                try:
+                    if int(sordted_timestamps[0]) - int(sordted_timestamps[-1]) <= 86400:
+                        below_day = True
+                    else:
+                        below_day = False
+                except Exception as e:
+                    below_day = True
+                #---------------------------------------------------------------------------
+                #calculate number of unique authors per subcluster and take the mean
+                user_nsids = sb_data.loc[sb_data['multi_cluster_label'] == motif_label]['user_nsid']
+                unique_authors = len(user_nsids.unique())
+                # ---------------------------------------------------------------------------
+                # Compare timestamp all_below_day with unique_author count
+                if below_day and unique_authors == 1:
+                    bulk_factor = 0.5
+                elif below_day and unique_authors > 1:
+                    bulk_factor = 0.75
+                else:
+                    bulk_factor = 1
+                #calculate motif score for this motif cluster
+                try:
+                    motif_score = round((motif_size + unique_authors + (0.0008/spatial_extend)) * bulk_factor, 2)
+                except Exception as ex2:
+                    print(f"Cluster score error: {ex2}")
+                    print(f"Motif score set to 0")
+                    motif_score = 0
+                # Add values to dictionary
+                cluster_scores[sb_name][motif_label] = {'motif_size': motif_size,
+                                                       'unique_authors': unique_authors,
+                                                       'bulk_factor': bulk_factor,
+                                                       'motif_score': motif_score}
+            best_motif_score = 0
+            best_motif_label = 0
+            for k, v in cluster_scores[sb_name].items():
+                if v['motif_score'] > best_motif_score:
+                    best_motif_score = v['motif_score']
+                    best_motif_label = k
 
-            #---------------------------------------------------------------------------
-            #calculate the subcluster timespans and take the mean
-
-            # timespans = []
-            # for label in cluster_labels_no_noise:
-            #     timestamps = sb_data.loc[sb_data['multi_cluster_label'] == label]['date_uploaded']
-            #     sordted_timestamps = list(timestamps.sort_values(ascending=False))
-            #     try:
-            #         timespans.append(int(sordted_timestamps[0]) - int(sordted_timestamps[-1]))
-            #     except Exception as e:
-            #         mean_timespan = None
-            # mean_timespan = statistics.mean(timespans)
-            #---------------------------------------------------------------------------
-            #calculate number of unique authors per subcluster and take the mean
-            count_unique_auhtors = []
-            for label in cluster_labels_no_noise:
-                user_nsids = sb_data.loc[sb_data['multi_cluster_label'] == label]['user_nsid']
-                count_unique_auhtors.append(len(user_nsids.unique()))
-            mean_unique_authors = statistics.mean(count_unique_auhtors)
-            # ---------------------------------------------------------------------------
-            # Add values to dictionary
-            cluster_scores[sb_name] = {'nr_subclusters': nr_subclusters,
-                                       'mean_subcluster_size': mean_subcluster_size,
-                                       # 'mean_timespan': mean_timespan,
-                                       'mean_unique_authors': mean_unique_authors,
-                                       'final_score': final_score}
+            cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
+            cluster_scores[sb_name]['best_motif_label'] = best_motif_label
+            cluster_scores[sb_name]['best_motif_score'] = best_motif_score
         else:
-            final_score = 0
-            cluster_scores[sb_name] = {'nr_subclusters': 0,
-                                       'mean_subcluster_size': 0,
-                                       # 'mean_timespan': 0,
-                                       'mean_unique_authors': 0,
-                                       'final_score': final_score}
-    # ---------------------------------------------------------------------------
-    # Calculate the final subcluster scores based on the subscore of each (their range) relativ to one another
-    overall_mean_nr_subclusters = []
-    overall_mean_subcluster_size = []
-    # overall_mean_timespan = []
-    overall_mean_unique_authors = []
-
-    for k, v in cluster_scores.items():
-        #Only consider HDBSCAN clusters that consist of motifs!
-        if v['final_score'] == None:
-            overall_mean_nr_subclusters.append(v['nr_subclusters'])
-            overall_mean_subcluster_size.append(v['mean_subcluster_size'])
-            # overall_mean_timespan.append(v['mean_timespan'])
-            overall_mean_unique_authors.append(v['mean_unique_authors'])
-
-    overall_mean_nr_subclusters = round(statistics.mean(overall_mean_nr_subclusters),2)
-    overall_mean_subcluster_size = round(statistics.mean(overall_mean_subcluster_size),2)
-    # overall_mean_timespan = statistics.mean(overall_mean_timespan)
-    overall_mean_unique_authors = round(statistics.mean(overall_mean_unique_authors),2)
-
-    if overall_mean_nr_subclusters == 0:
-        overall_mean_nr_subclusters = 1
-    if overall_mean_subcluster_size == 0:
-        overall_mean_subcluster_size = 1
-    # if overall_mean_timespan == 0:
-    #     overall_mean_timespan = 1
-    if overall_mean_unique_authors == 0:
-        overall_mean_unique_authors = 1
-
-    for k, v in cluster_scores.items():
-        if v['final_score'] != 0:
-            try:
-                v['final_score'] = round(((v['nr_subclusters']/overall_mean_nr_subclusters) + (v['mean_subcluster_size']/overall_mean_subcluster_size) \
-                                   + (v['mean_unique_authors']/overall_mean_unique_authors)*100), 2) #(1 / (v['mean_timespan']/overall_mean_timespan)) +
-            except Exception as e:
-                print(f"Cluster score error: {e}")
-                print(f"Final score set to 0")
-                v['final_score'] = 0
-
-    cluster_scores['overall_mean_nr_subclusters'] = overall_mean_nr_subclusters
-    cluster_scores['overall_mean_subcluster_size'] = overall_mean_subcluster_size
-    cluster_scores['overall_mean_unique_authors'] = overall_mean_unique_authors
-
+            cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
+            cluster_scores[sb_name]['best_motif_label'] = None
+            cluster_scores[sb_name]['best_motif_score'] = 0
+    print(json.dumps(cluster_scores, indent=2))
     return cluster_scores
 
 if __name__ == '__main__':
@@ -376,7 +358,7 @@ if __name__ == '__main__':
     natura2000_query = """
         SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
-        JOIN natura2000_projected as y
+        JOIN natura2000_0_4000 as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
@@ -475,10 +457,10 @@ if __name__ == '__main__':
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
     data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = natura2000_query
+    db_query = loewendenkmal_query
     flickr_bbox = bbox_small
-    filter_authors_switch = False
-    filter_spatial_extend = False
+    filter_authors_switch = True
+    filter_spatial_extend = True
     max_lng_extend = 0.05 #change / neglect when running on Cluster
     max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
@@ -491,7 +473,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'eu_natura'
+        project_name = 'loewendenkmal'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -541,6 +523,7 @@ if __name__ == '__main__':
         cluster_df = cluster_obj.df
         unique_cluster_lables = cluster_obj.unique_labels
         del cluster_obj
+        gc.collect()
         '''
         the dataframe will be need to be split into different dataframes because the added features
         will vary according to the clusters!
@@ -613,6 +596,7 @@ if __name__ == '__main__':
             cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset)
             subset_dfs[label] = cv_obj.subset_df
             del cv_obj
+            gc.collect()
 
         print("Image analysis for all spatial sub-clusters - done.")
         '''
@@ -645,6 +629,7 @@ if __name__ == '__main__':
             net_analysis = NetworkAnalyser(label, subset, threshold=image_similarity_params['network_threshold'])
             subset_dfs[label] = net_analysis.new_dataframe
             del net_analysis
+            gc.collect()
         '''
         5.1
         Check the final sub-cluster (exc. Noise) sizes to be above the defined
