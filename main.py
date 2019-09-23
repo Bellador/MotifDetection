@@ -13,7 +13,6 @@ import datetime
 import os
 import sys
 import gc
-import json
 
 def plot_clusters(subset_name, subset):
     unique_labels = subset.multi_cluster_label.unique()
@@ -123,6 +122,18 @@ def filter_authors(label, subset):
     else:
         return (subset, 'accepted')
 
+def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_scores):
+    try:
+        pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
+        if not os.path.exists(pickle_path):
+            os.makedirs(pickle_path)
+        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+                                        image_params['algorithm'], image_params['lowe_ratio'], index, datetime.datetime.now())
+        dataframe.to_pickle(os.path.join(pickle_path, name))
+        print(f"Pickling: {name}")
+
+    except Exception as e:
+        print(f"Error: {e} occurred while pickling dataframe {index}")
 def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_scores):
     try:
         pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
@@ -283,6 +294,12 @@ def calc_cluster_scores(dataset):
                 # --------------------------------------------------------------------------
                 # calculate spatial extend
                 # defined as the sum of: (lat_max - lat_min) + (lng_max - lng_min)
+                '''
+                shouldn't matter which row to take since the motif score (column -1)is the same for all objects of the same motif
+                cluster
+                '''
+                similarity_motif_score = labels.iloc[0, -1]
+                test_similarity_motif_score = labels.iloc[1, -1]
                 latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
                 longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
                 sorted_latitudes = list(latitudes.sort_values(ascending=False))
@@ -323,7 +340,8 @@ def calc_cluster_scores(dataset):
                     bulk_factor = 1
                 #calculate motif score for this motif cluster
                 try:
-                    motif_score = round((motif_size + unique_authors + (0.0008/spatial_extend)) * bulk_factor, 2)
+                    motif_score = round(((similarity_motif_score / (motif_size * 2)) + (motif_size * 10) + (unique_authors * 20) + (0.0008 / spatial_extend)) * bulk_factor, 2)
+                    motif_score_OLD = round((motif_size + unique_authors + (0.0008 / spatial_extend)) * bulk_factor, 2)
                 except Exception as ex2:
                     print(f"Cluster score error: {ex2}")
                     print(f"Motif score set to 0")
@@ -347,7 +365,7 @@ def calc_cluster_scores(dataset):
             cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
             cluster_scores[sb_name]['best_motif_label'] = None
             cluster_scores[sb_name]['best_motif_score'] = 0
-    print(json.dumps(cluster_scores, indent=2))
+
     return cluster_scores
 
 if __name__ == '__main__':

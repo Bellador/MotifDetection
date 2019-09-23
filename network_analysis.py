@@ -31,7 +31,9 @@ class NetworkAnalyser:
             valid_indexes = list(df.index.values)
             for counter, (i, r) in enumerate(df.iterrows()):
                 if i in valid_indexes:
-                    clusters[counter] = []
+                    clusters[counter] = {'entities': [],
+                                         'seed': i,
+                                         'motif_score': 0}
                     # iterate over the initial row to find neighbours
                     for k, score in r.items():
                         if k in valid_indexes:
@@ -39,16 +41,17 @@ class NetworkAnalyser:
                                 print(f"score value: {score}, threshold:{threshold}, line 38")
                                 score = 0
                             if score > threshold:
-                                clusters[counter].append(k)
+                                clusters[counter]['entities'].append(k)
+                                clusters[counter]['motif_score'] += score
                                 # again, remove processed neighbour index
                                 valid_indexes.remove(k)
                     valid_indexes.remove(i)
                     # if at least one neighbour has been found; next iterate over these neighbours
-                    if len(clusters[counter]) != 0:
+                    if len(clusters[counter]['entities']) != 0:
                         # if at least one neighbour has been found for this index, then the index itself is also added to the list
-                        clusters[counter].append(i)
+                        clusters[counter]['entities'].append(i)
                         # iterate over previously found neighbours and add any thereof neigbours to the same cluster
-                        for neighbour in clusters[counter]:
+                        for neighbour in clusters[counter]['entities']:
                             # get row from df mit said neighbour id
                             row = df.loc[neighbour, :]
                             series_index = row.index
@@ -56,21 +59,29 @@ class NetworkAnalyser:
                                 if isinstance(score, str):
                                     print(f"score value: {score}, threshold:{threshold}, line 56")
                                     score = 0
+                                if score > threshold and neighbour != clusters[counter]['seed']:
+                                    clusters[counter]['motif_score'] += score
                                 if score > threshold and series_index[counter2] in valid_indexes:
-                                    clusters[counter].append(series_index[counter2])
+                                    clusters[counter]['entities'].append(series_index[counter2])
+
                                     valid_indexes.remove(series_index[counter2])
+            # add necessary new df columns
+            dataframe.loc[:, 'multi_cluster_label'] = np.nan
+            dataframe.loc[:, 'motif_score'] = np.nan
             '''
             2. Add Cluster labels
             to the dataframe (subset)
             '''
-            dataframe.loc[:, 'multi_cluster_label'] = np.nan
-            for k, v in clusters.items():
-                if len(v) != 0:
-                    for id in v:
-                        dataframe.loc[id, 'multi_cluster_label'] = k
+            for cluster_nr, v in clusters.items():
+                if len(v['entities']) != 0:
+                    for id in v['entities']:
+                        dataframe.loc[id, 'multi_cluster_label'] = cluster_nr
+                        dataframe.loc[id, 'motif_score'] = v['motif_score']
+
             #everything else (still value NaN) needs to be set to noise -1
             boolean_array = dataframe.multi_cluster_label.isnull()
             dataframe.loc[boolean_array, 'multi_cluster_label'] = -1
+
             '''
             3. Plot
             if minimum one cluster besides noise exists

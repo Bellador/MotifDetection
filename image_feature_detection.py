@@ -106,12 +106,12 @@ class ImageSimilarityAnalyser:
                         # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
                         image_objects[img_id] = url_to_image(url, session)
                         feature_dict[img_id] = {}
-                        raise requests.exceptions.ConnectionError
+                        # raise requests.exceptions.ConnectionError
                         print(f'\r{counter} of {nr_images} images', end='')
                     except Exception as e:
                         print(f"{e}")
                         if isinstance(e, requests.exceptions.ConnectionError):
-                            print("CONNECTIONERROR - TRYING OTHER DNS REQUEST")
+                            print("CONNECTION ERROR - TRYING OTHER DNS REQUEST")
                             hostname = "google.com"  # example
                             response = os.system("ping -c 1 -w2 " + hostname + " > /dev/null 2>&1")
                             # and then check the response...
