@@ -134,18 +134,6 @@ def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_sc
 
     except Exception as e:
         print(f"Error: {e} occurred while pickling dataframe {index}")
-def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_scores):
-    try:
-        pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
-        if not os.path.exists(pickle_path):
-            os.makedirs(pickle_path)
-        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
-                                        image_params['algorithm'], image_params['lowe_ratio'], index, datetime.datetime.now())
-        dataframe.to_pickle(os.path.join(pickle_path, name))
-        print(f"Pickling: {name}")
-
-    except Exception as e:
-        print(f"Error: {e} occurred while pickling dataframe {index}")
 
 def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster_scores):
     '''
@@ -191,6 +179,9 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
             f.write(f"<h3>      best_motif_label: {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score: {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_unique_authors: {cluster_scores[index]['best_motif_unique_authors']}</h3>")
+            f.write(f"<h3>      best_motif_bulk_factor: {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
+            f.write(f"<h3>      best_motif_below_a_day: {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
@@ -240,6 +231,9 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
             f.write(f"<h3>      best_motif_label: {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score: {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_unique_authors: {cluster_scores[index]['best_motif_unique_authors']}</h3>")
+            f.write(f"<h3>      best_motif_bulk_factor: {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
+            f.write(f"<h3>      best_motif_below_a_day: {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
@@ -340,7 +334,7 @@ def calc_cluster_scores(dataset):
                     bulk_factor = 1
                 #calculate motif score for this motif cluster
                 try:
-                    motif_score = round(((similarity_motif_score / (motif_size * 2)) + (motif_size * 10) + (unique_authors * 20) + (0.0008 / spatial_extend)) * bulk_factor, 2)
+                    motif_score = round(((similarity_motif_score / ((motif_size-1) * motif_size)) + (motif_size * 10) + (unique_authors * 20) + (0.0008 / spatial_extend)) * bulk_factor, 2)
                     motif_score_OLD = round((motif_size + unique_authors + (0.0008 / spatial_extend)) * bulk_factor, 2)
                 except Exception as ex2:
                     print(f"Cluster score error: {ex2}")
@@ -348,23 +342,36 @@ def calc_cluster_scores(dataset):
                     motif_score = 0
                 # Add values to dictionary
                 cluster_scores[sb_name][motif_label] = {'motif_size': motif_size,
-                                                       'unique_authors': unique_authors,
-                                                       'bulk_factor': bulk_factor,
-                                                       'motif_score': motif_score}
+                                                        'unique_authors': unique_authors,
+                                                        'bulk_factor': bulk_factor,
+                                                        'motif_score': motif_score,
+                                                        'below_day': below_day}
             best_motif_score = 0
             best_motif_label = 0
+            best_motif_bulk_factor = None
+            best_motif_unique_authors = 0
+            best_motif_below_day = None
             for k, v in cluster_scores[sb_name].items():
                 if v['motif_score'] > best_motif_score:
                     best_motif_score = v['motif_score']
                     best_motif_label = k
+                    best_motif_bulk_factor = v['bulk_factor']
+                    best_motif_unique_authors = v['unique_authors']
+                    best_motif_below_day = v['below_day']
 
             cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
             cluster_scores[sb_name]['best_motif_label'] = best_motif_label
             cluster_scores[sb_name]['best_motif_score'] = best_motif_score
+            cluster_scores[sb_name]['best_motif_bulk_factor'] = best_motif_bulk_factor
+            cluster_scores[sb_name]['best_motif_unique_authors'] = best_motif_unique_authors
+            cluster_scores[sb_name]['best_motif_below_day'] = best_motif_below_day
         else:
             cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
             cluster_scores[sb_name]['best_motif_label'] = None
             cluster_scores[sb_name]['best_motif_score'] = 0
+            cluster_scores[sb_name]['best_motif_bulk_factor'] = None
+            cluster_scores[sb_name]['best_motif_unique_authors'] = 0
+            cluster_scores[sb_name]['best_motif_below_day'] = None
 
     return cluster_scores
 
