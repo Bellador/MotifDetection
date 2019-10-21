@@ -7,6 +7,8 @@ import datetime
 import math
 import re
 import time
+import ssl
+import urllib.request
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -14,10 +16,11 @@ from urllib3.util import Retry
 class ImageSimilarityAnalyser:
     score_same_image = 0
 
-    def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False):
+    def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False, image_from='path'):
         self.project_name = project_name
         self.data_source = data_source
         self.algorithm_params = algorithm_params
+        self.image_from = image_from
         self.subset_df = subset_df
         self.project_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name)
         self.images_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name, f'images_{self.project_name}')
@@ -64,10 +67,18 @@ class ImageSimilarityAnalyser:
         print("ImageSimilarityAnalysis Class - done")
 
     def file_loader(self):
+        '''
+        image_from specifies where the image data shall be taken from
+        options: 'path': from the image_storage /mnt1 volume
+                'url': from direct requests to the remote farm server where the images are hosted
+
+        :param image_from:
+        :return:
+        '''
         def url_to_image(target_url, session):
             # download the image, convert it to a NumPy array, and then read it into OpenCV format
             # content = urllib.request.urlopen(url, context=ssl._create_unverified_context())
-            content = session.get(target_url, verify=False)
+            content = session.get(target_url, verify=False, stream=True)
             content.raise_for_status()
             content = content.content
             image = np.asarray(bytearray(content), dtype="uint8")
@@ -75,77 +86,95 @@ class ImageSimilarityAnalyser:
             # return the image
             return image
 
-        #Create session
-        with requests.Session() as session:
-            session.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"}
-            # change retry settings to overcome HTTPSConnectionPool error - target server refuses connections due to many per time
-            retry = Retry(total=3, read=3, connect=3, backoff_factor=1)
-            adapter = HTTPAdapter(max_retries=retry)
-            session.mount('http://', adapter)
-            session.mount('https://', adapter)
+        def path_to_image(id_hash):
+            first_3b = id_hash[:3]
+            sec_3b = id_hash[3:6]
+            image_path = f"C:/Users/mhartman/PycharmProjects/IMAGE_SCRAPE_TEST/{first_3b}/{sec_3b}/{id_hash}.jpg"
+            with open(image_path, 'rb') as f:
+                content = f.read()
+            image = np.asarray(bytearray(content), dtype="uint8")
+            image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+            return image
 
-            requests.packages.urllib3.disable_warnings()  # turn off SSL warnings
+        # turn off SSL warnings
+        requests.packages.urllib3.disable_warnings()
+        #load image as grayscale since following 3 algoithms ignore RGB information
+        image_objects = {}
+        feature_dict = {}
 
-            #load image as grayscale since following 3 algoithms ignore RGB information
-            image_objects = {}
-            feature_dict = {}
-            filename_tracker = {}
-            if self.data_source == 1:
-                ids = self.subset_df.index.values
-                img_urls = self.subset_df.loc[:, 'download_url']
-                nr_images = img_urls.shape[0]
-                not_found = 0
-                for counter, (img_id, url) in enumerate(zip(ids, img_urls), 1):
+        if self.data_source == 1: #PostgreSQL db
+            ids = self.subset_df.index.values
+            img_urls = self.subset_df.loc[:, 'download_url']
+            id_hashes = self.subset_df.loc[:, 'id_hash']
+            nr_images = img_urls.shape[0]
+            not_found = 0
+
+            if self.image_from == 'url':
+                # Create session
+                with requests.Session() as session:
+                    # session.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"}
+                    # change retry settings to overcome HTTPSConnectionPool error - target server refuses connections due to many per time
+                    retry = Retry(total=3, read=3, connect=3, backoff_factor=1)
+                    adapter = HTTPAdapter(max_retries=retry)
+                    session.mount('http://', adapter)
+                    session.mount('https://', adapter)
+                    for counter, (img_id, url) in enumerate(zip(ids, img_urls), 1):
+                        try:
+                            '''
+                            HERE FIX URL <MISSING SCHEMA> ERROR
+                            append 'http:' if not already present
+                            '''
+                            if url[:2] == '//':
+                                url = 'http:' + url
+                            # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+                            image_objects[img_id] = url_to_image(url, session)
+                            feature_dict[img_id] = {}
+                            print(f'\r{counter} of {nr_images} images', end='')
+                        except Exception as e:
+                            print(f"{e}")
+                            if isinstance(e, requests.exceptions.ConnectionError):
+                                print("CONNECTIONERROR - TRYING OTHER DNS REQUEST")
+                                hostname = "google.com"  # example
+                                response = os.system("ping -c 1 -w2 " + hostname + " > /dev/null 2>&1")
+                                # and then check the response...
+                                if response == 0:
+                                    print(hostname, ' is up!')
+                                else:
+                                    print(hostname, ' is down!')
+                            not_found += 1
+                    print(f"\nNot found images: {not_found}")
+                    if not_found == len(ids):
+                        amount = 5
+                        print(f"Sleep {amount}s due to all images raised errors")
+                        time.sleep(amount)
+
+            elif self.image_from == 'path':
+                for counter, (img_id, id_hash) in enumerate(zip(ids, id_hashes), 1):
                     try:
-                        '''
-                        HERE FIX URL <MISSING SCHEMA> ERROR
-                        append 'http:' if not already present
-                        '''
-                        if url[:2] == '//':
-                            url = 'http:' + url
-                        # image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-                        image_objects[img_id] = url_to_image(url, session)
+                        image = path_to_image(id_hash)
+                        image_objects[img_id] = image
                         feature_dict[img_id] = {}
-                        # raise requests.exceptions.ConnectionError
                         print(f'\r{counter} of {nr_images} images', end='')
                     except Exception as e:
-                        print(f"{e}")
-                        if isinstance(e, requests.exceptions.ConnectionError):
-                            print("CONNECTION ERROR - TRYING OTHER DNS REQUEST")
-                            hostname = "google.com"  # example
-                            response = os.system("ping -c 1 -w2 " + hostname + " > /dev/null 2>&1")
-                            # and then check the response...
-                            if response == 0:
-                                print(hostname, ' is up!')
-                            else:
-                                print(hostname, ' is down!')
+                        print(f"Image: {id_hash}; Error: {e}")
                         not_found += 1
                 print(f"\nNot found images: {not_found}")
-                if not_found == len(ids):
-                    amount = 30
-                    print(f"Sleep {amount}s due to all images raised errors")
-                    time.sleep(amount)
 
-            elif self.data_source == 2:
-                images = [os.path.join(self.images_path, file) for file in os.listdir(self.images_path) if os.path.isfile(os.path.join(self.images_path, file))]
-                nr_images = len(images)
-                '''
-                load images
-                ONLY of the specific subset!
-                '''
-                needed_ids = self.subset_df.index.values
-                print(f"Number of images to process: {len(needed_ids)}")
-                for index, img in enumerate(images):
-                    pattern = r"([\d]*)\.jpg$"
-                    img_id = int(re.search(pattern, img).group(1))
-                    if img_id in needed_ids:
-                        image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-                        feature_dict[img_id] = {}
+        elif self.data_source == 2: #Flickr API
+            images = [os.path.join(self.images_path, file) for file in os.listdir(self.images_path) if os.path.isfile(os.path.join(self.images_path, file))]
+            nr_images = len(images)
             '''
-            creating already the required keys with empty dict's in the feature dictionary
-            which will store the corresponding keypoints and descriptors
+            load images
+            ONLY of the specific subset!
             '''
-            # print(f"{index+1} images read.")
+            needed_ids = self.subset_df.index.values
+            print(f"Number of images to process: {len(needed_ids)}")
+            for index, img in enumerate(images):
+                pattern = r"([\d]*)\.jpg$"
+                img_id = int(re.search(pattern, img).group(1))
+                if img_id in needed_ids:
+                    image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+                    feature_dict[img_id] = {}
         return image_objects, feature_dict, nr_images
 
     def compute_keypoints(self):
@@ -160,15 +189,16 @@ class ImageSimilarityAnalyser:
         for obj in self.image_objects:
             #the None defines if a mask shall be used or not
             try:
-                keypoints, descriptors = self.alg_obj.detectAndCompute(self.image_objects[obj], None)
+                img_obj = self.image_objects[obj]
+                keypoints, descriptors = self.alg_obj.detectAndCompute(img_obj, None)
             except Exception as e:
-                print(f"{e}; Compute_keypoint error")
+                print(f"Img_obj: {img_obj}, Img_id: {obj} \n{e}; Compute_keypoint error")
                 keypoints = []
                 descriptors = []
             self.feature_dict[obj]['kp'] = keypoints
             self.feature_dict[obj]['ds'] = descriptors
 
-    def match_keypoints(self, lowe_ratio=0.8, pickle_similarity_matrix=True):
+    def match_keypoints(self, lowe_ratio=0.7, pickle_similarity_matrix=True):
         '''
         Brute Force
         Matching between the different images

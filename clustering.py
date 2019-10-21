@@ -32,6 +32,19 @@ class ClusterMaster:
     def read_data(self):
         if self.spatial_clustering:
             dataframe = pd.read_csv(self.data_path, delimiter=';', index_col='photo_id')
+            length_before = len(dataframe.index.values)
+            '''
+            Check and remove any dublicate values in the dataframe that could potentially
+            occur from the PostGIS spatial query. IMPORTANT!
+            (dublicates were seen in the final dataframes and trasted back to the original sql query output.
+            Exact reason is not know...)
+            '''
+            dataframe.drop_duplicates('id_hash', keep='first', inplace=True)
+            length_after = len(dataframe.index.values)
+            print("--" * 30)
+            print("Check for duplicates in original dataframe...")
+            print(f"{length_before - length_after} duplicates removed")
+            print("--" * 30)
             self.original_df_size = dataframe.shape
         else:
             dataframe = self.subset_df
@@ -45,7 +58,8 @@ class ClusterMaster:
         if self.params['algorithm'] == 'HDBSCAN':
             self.min_cluster_size = self.params['min_cluster_size']
             self.min_samples = self.params['min_samples']
-            self.clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_size, min_samples=self.min_samples)
+            self.cluster_selection_method = self.params['cluster_selection_method'] #default 'eom'
+            self.clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_size, min_samples=self.min_samples, cluster_selection_method=self.cluster_selection_method)
 
         elif self.params['algorithm'] == 'DBSCAN':
             self.eps = self.params['eps']

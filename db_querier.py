@@ -21,17 +21,17 @@ class DbQuerier:
 
     def connect_db(self):
         while True:
-            #check if db password file exists, otherwise manual entry
+            # check if db password file exists, otherwise manual entry
             if os.path.isfile(DbQuerier.path_db_psw):
                 with open(DbQuerier.path_db_psw, 'r') as f:
                     password = f.read()
             else:
                 password = input("Input database password: ")
             try:
-                conn = psycopg2.connect("host=localhost dbname=100m_dataset user=postgres password={}".format(password))
+                conn = psycopg2.connect(f"host=localhost dbname=100m_dataset user=postgres password={password}")
                 return conn
-            except:
-                print("Wrong password. Try again.")
+            except Exception as e:
+                print(f"Error {e}. Try again.")
                 sys.exit(1)
 
     def export_query_to_csv(self):

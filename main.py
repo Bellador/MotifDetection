@@ -127,7 +127,7 @@ def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_sc
         pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
         if not os.path.exists(pickle_path):
             os.makedirs(pickle_path)
-        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H_%M_%S}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                         image_params['algorithm'], image_params['lowe_ratio'], index, datetime.datetime.now())
         dataframe.to_pickle(os.path.join(pickle_path, name))
         print(f"Pickling: {name}")
@@ -154,7 +154,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
     else:
         print(f"Project folder {folder_name} exists already.")
 
-    file_name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H}.html'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+    file_name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H_%M_%S}.html'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                          image_params['algorithm'], image_params['lowe_ratio'], index,
                                          datetime.datetime.now())
     #Database
@@ -166,22 +166,22 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<title>Multi Cluster {index}</title>\n")
             f.write("</head>\n")
             f.write("<body>\n")
-            f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
-            f.write(f"<h2>Used parameters:</h2>")
+            f.write(f"<h1>Detected Motifs: {index}</h1>")
+            f.write(f"<h2>Used parameters</h2>")
             f.write(f"<h3>Data_source: PostgresqlDB</h3>")
-            f.write(f"<h3>     SQL_query: {db_query}</h3>")
-            f.write(f"<h3>Filter - Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
-            f.write(f"<h3>Clustering - Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
-            f.write(f"<h3>CV - Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
-            f.write(f"<h3>Motif network analysis - Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"<h3>SQL_query: {db_query}</h3>")
+            f.write(f"<h3>Filter                    Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
+            f.write(f"<h3>Clustering                Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(f"<h3>CV                        Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write(f"<h3>Motif network analysis    Threshold: {image_params['network_threshold']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
-            f.write(f"<h2>Cluster score: </h2>")
-            f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
-            f.write(f"<h3>      best_motif_label: {cluster_scores[index]['best_motif_label']}</h3>")
-            f.write(f"<h3>      best_motif_score: {cluster_scores[index]['best_motif_score']}</h3>")
-            f.write(f"<h3>      best_motif_unique_authors: {cluster_scores[index]['best_motif_unique_authors']}</h3>")
-            f.write(f"<h3>      best_motif_bulk_factor: {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
-            f.write(f"<h3>      best_motif_below_a_day: {cluster_scores[index]['best_motif_below_day']}</h3>")
+            f.write(f"<h2>Cluster score </h2>")
+            f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
+            f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
+            f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
+            f.write(f"<h3>      best_motif_bulk_factor:     {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
+            f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
@@ -193,7 +193,14 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
 
             # append media objects to correct cluster
             for i, row in dataframe.iterrows():
-                image_url = row['download_url']
+                try:
+                    if data_source == 1:
+                        image_url = row['download_url']
+                    elif data_source == 2:
+                        image_url = row['url']
+                except Exception as e:
+                    print(e)
+                    image_url = 'None'
                 cluster_label = row['multi_cluster_label']
                 cluster_dict[cluster_label].append((i, image_url))
 
@@ -218,22 +225,26 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<title>Multi Cluster {index}</title>\n")
             f.write("</head>\n")
             f.write("<body>\n")
-            f.write(f"<h1>Image Similarity Clustering: {index}</h1>")
-            f.write(f"<h2>Used parameters: </h2>")
-            f.write(f"<h3>Data_source: FlickrAPI</h3>")
-            f.write(f"<h3>  Bounding box: {flickr_bbox}</h3>")
-            f.write(f"<h3>Filter - Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
-            f.write(f"<h3>Clustering - Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
-            f.write(f"<h3>CV - Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
-            f.write(f"<h3>Motif network analysis - Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"<h1>Detected Motifs: {index}</h1>")
+            f.write(f"<h2>Used parameters</h2>")
+            f.write(f"<h3>Data_source:  FlickrAPI</h3>")
+            f.write(f"<h3>Bounding box: {flickr_bbox}</h3>")
+            f.write(
+                f"<h3>Filter                    Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
+            f.write(
+                f"<h3>Clustering                Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(
+                f"<h3>CV                        Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write(f"<h3>Motif network analysis    Threshold: {image_params['network_threshold']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
-            f.write(f"<h3>      nr_subclusters: {cluster_scores[index]['nr_subclusters']}</h3>")
-            f.write(f"<h3>      best_motif_label: {cluster_scores[index]['best_motif_label']}</h3>")
-            f.write(f"<h3>      best_motif_score: {cluster_scores[index]['best_motif_score']}</h3>")
-            f.write(f"<h3>      best_motif_unique_authors: {cluster_scores[index]['best_motif_unique_authors']}</h3>")
-            f.write(f"<h3>      best_motif_bulk_factor: {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
-            f.write(f"<h3>      best_motif_below_a_day: {cluster_scores[index]['best_motif_below_day']}</h3>")
+            f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
+            f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
+            f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
+            f.write(
+                f"<h3>      best_motif_bulk_factor:     {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
+            f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
             cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
@@ -293,7 +304,6 @@ def calc_cluster_scores(dataset):
                 cluster
                 '''
                 similarity_motif_score = labels.iloc[0, -1]
-                test_similarity_motif_score = labels.iloc[1, -1]
                 latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
                 longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
                 sorted_latitudes = list(latitudes.sort_values(ascending=False))
@@ -302,7 +312,7 @@ def calc_cluster_scores(dataset):
                 extend_longitudes = int(sorted_longitudes[0]) - int(sorted_longitudes[-1])
                 spatial_extend = extend_latitudes + extend_longitudes
                 #if really 0 then the spatial extend is set to the lowest resolution of x and y values in the dataset
-                if spatial_extend == 0:
+                if spatial_extend <= 0.00001:
                     spatial_extend = 0.00001
                 # --------------------------------------------------------------------------
                 # calculate the subcluster timespans
@@ -318,7 +328,7 @@ def calc_cluster_scores(dataset):
                         below_day = True
                     else:
                         below_day = False
-                except Exception as e:
+                except Exception:
                     below_day = True
                 #---------------------------------------------------------------------------
                 #calculate number of unique authors per subcluster and take the mean
@@ -334,8 +344,7 @@ def calc_cluster_scores(dataset):
                     bulk_factor = 1
                 #calculate motif score for this motif cluster
                 try:
-                    motif_score = round(((similarity_motif_score / ((motif_size-1) * motif_size)) + (motif_size * 10) + (unique_authors * 20) + (0.0008 / spatial_extend)) * bulk_factor, 2)
-                    motif_score_OLD = round((motif_size + unique_authors + (0.0008 / spatial_extend)) * bulk_factor, 2)
+                    motif_score = round(((similarity_motif_score / ((motif_size-1) * motif_size)) + (motif_size * 30) + (unique_authors * 30) + (0.0008 / spatial_extend)) * bulk_factor, 2)
                 except Exception as ex2:
                     print(f"Cluster score error: {ex2}")
                     print(f"Motif score set to 0")
@@ -381,32 +390,23 @@ if __name__ == '__main__':
     
     '''
     natura2000_query = """
-        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
-        JOIN natura2000_0_4000 as y
+        JOIN natura2000_4000_8000 as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
 
     switzerland_query = """
-        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
         JOIN switzerland as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
-        """
-
-    switzerland_old_query = """
-        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
-        FROM data_100m as x
-        JOIN switzerland as y
-        ON ST_WITHIN(x.geometry, y.geom)
-        WHERE x.georeferenced = 1
-        AND new_data = 0
         """
 
     wildkirchli_query = """
-        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
         JOIN wildkirchli as y
         ON ST_WITHIN(x.geometry, y.geom)
@@ -414,7 +414,7 @@ if __name__ == '__main__':
         """
 
     loewendenkmal_query = """
-        SELECT x.photo_id, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
+        SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
         JOIN loewendenkmal as y
         ON ST_WITHIN(x.geometry, y.geom)
@@ -483,6 +483,7 @@ if __name__ == '__main__':
     ##############################################################
     data_source = 1 #1 = PostGIS database; 2 = Flickr API
     db_query = loewendenkmal_query
+    image_from = 'path' #options 'path': from image_storage volume; 'url': from external server that hosts images
     flickr_bbox = bbox_small
     filter_authors_switch = True
     filter_spatial_extend = True
@@ -533,9 +534,26 @@ if __name__ == '__main__':
                 data_path = db_obj.csv_output_path
 
         elif data_source == 2:
-            print("About to import data from Flickr API...")
-            flickr_obj = FlickrQuerier(project_name, bbox=flickr_bbox)
-            data_path = flickr_obj.csv_output_path
+            to_flickrquery = True
+            data_path = None
+            # check if metadatafile already exists
+            # r=root, d=directories, f = files
+            try:
+                for r, d, f in os.walk(project_path):
+                    for file in f:
+                        if file.endswith('.csv'):
+                            print("Metadata for this flickr query already exists.")
+                            print("Skipping invocation of FlickrQuerier.")
+                            print("--" * 30)
+                            to_flickrquery = False
+                            data_path = os.path.join(r, file)
+            except Exception as e:
+                print(f"Error: {e}")
+
+            if to_flickrquery:
+                print("About to import data from Flickr API...")
+                flickr_obj = FlickrQuerier(project_name, bbox=flickr_bbox)
+                data_path = flickr_obj.csv_output_path
         else:
             print("Invalid data source")
             sys.exit(1)
@@ -618,7 +636,7 @@ if __name__ == '__main__':
         for index, (label, subset) in enumerate(subset_dfs.items(), 1):
             print("##" * 30)
             print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {label}")
-            cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset)
+            cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset, image_from=image_from)
             subset_dfs[label] = cv_obj.subset_df
             del cv_obj
             gc.collect()

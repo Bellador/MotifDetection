@@ -6,6 +6,7 @@ import ssl
 import datetime
 import time
 import os
+import requests
 from functools import wraps
 
 class FlickrQuerier:
@@ -59,7 +60,7 @@ class FlickrQuerier:
         print("--" * 30)
         print(f"Downloading images into folder {project_name} to current directory.")
         self.get_images(self.unique_ids, self.flickr)
-        print("\n--" * 30)
+        print("--" * 30)
         print(f"Download images - done.")
         print("--" * 30)
         print("--" * 30)
@@ -88,8 +89,20 @@ class FlickrQuerier:
 
     def flickr_search(self):
         flickr = flickrapi.FlickrAPI(self.api_key, self.api_secret, format='json')
-        photos = flickr.photos.search(bbox=self.bbox, min_upload_date=self.min_upload_date, max_upload_date=self.max_upload_date, per_page=250) #is_, accuracy=12, commons=True, page=1, min_taken_date='YYYY-MM-DD HH:MM:SS'
-        # print(json.dumps(json.loads(photos.decode('utf-8')), indent=2))
+        while True:
+            try:
+                photos = flickr.photos.search(bbox=self.bbox, min_upload_date=self.min_upload_date, max_upload_date=self.max_upload_date, per_page=250) #is_, accuracy=12, commons=True, page=1, min_taken_date='YYYY-MM-DD HH:MM:SS'
+                break
+            # print(json.dumps(json.loads(photos.decode('utf-8')), indent=2))
+            except Exception as e:
+                print("*" * 30)
+                print("*" * 30)
+                print("Error occurred: {}".format(e))
+                print("sleeping 5s...")
+                print("*" * 30)
+                print("*" * 30)
+                time.sleep(5)
+
         result = json.loads(photos.decode('utf-8'))
         '''
         Handling for multipage results stored in result_dict
@@ -200,25 +213,25 @@ class FlickrQuerier:
                     locality = results['location']['locality']['_content'].replace(csv_separator, '')
                 except Exception as e:
                     locality = ''
-                    print(f"{e} not found. Continue")
+                    # print(f"{e} not found. Continue")
 
                 try:
                     county = results['location']['county']['_content'].replace(csv_separator, '')
                 except Exception as e:
                     county = ''
-                    print(f"{e} not found. Continue")
+                    # print(f"{e} not found. Continue")
 
                 try:
                     region = results['location']['region']['_content'].replace(csv_separator, '')
                 except Exception as e:
                     region = ''
-                    print(f"{e} not found. Continue")
+                    # print(f"{e} not found. Continue")
 
                 try:
                     country = results['location']['country']['_content'].replace(csv_separator, '')
                 except Exception as e:
                     country = ''
-                    print(f"\n{e} not found. Continue")
+                    # print(f"\n{e} not found. Continue")
 
                 '''
                 text clean up
