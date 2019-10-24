@@ -35,7 +35,7 @@ class FlickrQuerier:
                 return func(*args, **kwargs)
             return wrapper_func
 
-    def __init__(self, project_name, bbox, min_upload_date=None, max_upload_date=None):
+    def __init__(self, project_name, bbox, min_upload_date=None, max_upload_date=None, toget_images=True):
         print("--"*30)
         print("Initialising Flickr Search with FlickrQuerier Class")
         self.project_name = project_name
@@ -44,6 +44,7 @@ class FlickrQuerier:
         self.bbox = bbox
         self.min_upload_date = min_upload_date
         self.max_upload_date = max_upload_date
+        self.toget_images = toget_images
         self.api_key, self.api_secret = self.load_creds(FlickrQuerier.path_CREDENTIALS)
         print("--" * 30)
         print(f"Loading flickr API credentials - done.")
@@ -59,7 +60,8 @@ class FlickrQuerier:
         print(f"Acquiring metadata - done.")
         print("--" * 30)
         print(f"Downloading images into folder {project_name} to current directory.")
-        self.get_images(self.unique_ids, self.flickr)
+        if self.toget_images:
+            self.get_images(self.unique_ids, self.flickr)
         print("--" * 30)
         print(f"Download images - done.")
         print("--" * 30)
@@ -193,8 +195,15 @@ class FlickrQuerier:
 
         with open(self.csv_output_path, 'w', encoding='utf-8') as f:
             for index, id in enumerate(self.unique_ids):
-                results = json.loads(self.flickr.photos.getInfo(photo_id=id).decode('utf-8'))
-                #get the top level
+                while True:
+                    try:
+                        results = json.loads(self.flickr.photos.getInfo(photo_id=id).decode('utf-8'))
+                        break
+                    except:
+                        sleeps = 5
+                        print(f"Error. Sleeping {sleeps}s")
+                        time.sleep(sleeps)
+                        # get the top level
                 try:
                     results = results['photo']
                 except Exception as e:

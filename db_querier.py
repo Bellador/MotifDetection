@@ -4,7 +4,7 @@ import os
 import sys
 
 class DbQuerier:
-    path_db_psw = "C:/Users/mhartman/Documents/100mDataset/db_password.txt"
+    path_db_psw = "//home/debian/MotiveDetection/db_password.txt"
 
     def __init__(self, query, project_name):
         self.query = query
@@ -21,14 +21,14 @@ class DbQuerier:
 
     def connect_db(self):
         while True:
-            # check if db password file exists, otherwise manual entry
+            #check if db password file exists, otherwise manual entry
             if os.path.isfile(DbQuerier.path_db_psw):
                 with open(DbQuerier.path_db_psw, 'r') as f:
                     password = f.read()
             else:
                 password = input("Input database password: ")
             try:
-                conn = psycopg2.connect(f"host=localhost dbname=100m_dataset user=postgres password={password}")
+                conn = psycopg2.connect("host=127.0.0.1 dbname=100m_dataset user=postgres port=5432 password={}".format(password))
                 return conn
             except Exception as e:
                 print(f"Error {e}. Try again.")
@@ -37,6 +37,6 @@ class DbQuerier:
     def export_query_to_csv(self):
         with self.conn.cursor() as cursor:
             outputquery = "COPY ({0}) TO STDOUT WITH DELIMITER ';' CSV HEADER".format(self.query)
-            with open(self.csv_output_path, 'w') as f:
+            with open(self.csv_output_path, 'w', encoding='utf-8') as f:
                 cursor.copy_expert(outputquery, f)
         print("Export file created at: {}".format(self.csv_output_path))

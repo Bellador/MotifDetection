@@ -10,8 +10,9 @@ import numpy as np
 import statistics
 import warnings
 import datetime
-import os
+import json
 import sys
+import os
 import gc
 
 def plot_clusters(subset_name, subset):
@@ -389,6 +390,14 @@ if __name__ == '__main__':
     Database queries:
     
     '''
+    ross_query = """
+        SELECT x.photo_id, x.id_hash, x.user_nsid, x.title, x.description, x.date_uploaded, x.date_taken, x.page_url, x.download_url, x.user_tags, x.autotags, x.lat, x.lng, x.accuracy 
+        FROM data_100m as x
+        JOIN ch_lenk as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        """
+
     natura2000_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -482,7 +491,7 @@ if __name__ == '__main__':
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
     data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = loewendenkmal_query
+    db_query = ross_query
     image_from = 'path' #options 'path': from image_storage volume; 'url': from external server that hosts images
     flickr_bbox = bbox_small
     filter_authors_switch = True
@@ -499,7 +508,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'loewendenkmal'
+        project_name = 'CH-Lenk'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -557,6 +566,10 @@ if __name__ == '__main__':
         else:
             print("Invalid data source")
             sys.exit(1)
+
+        #Only want to query db
+        sys.exit(0)
+
         '''
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
