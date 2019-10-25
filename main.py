@@ -10,9 +10,8 @@ import numpy as np
 import statistics
 import warnings
 import datetime
-import json
-import sys
 import os
+import sys
 import gc
 
 def plot_clusters(subset_name, subset):
@@ -128,7 +127,7 @@ def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_sc
         pickle_path = os.path.join(main_dir_path, project_name, 'dataframe_pickles')
         if not os.path.exists(pickle_path):
             os.makedirs(pickle_path)
-        name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H_%M_%S}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+        name = '{}_score_{}_{}_{}_{}_{}_{}__{:%m_%d_%H_%M_%S}.pkl'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                         image_params['algorithm'], image_params['lowe_ratio'], index, datetime.datetime.now())
         dataframe.to_pickle(os.path.join(pickle_path, name))
         print(f"Pickling: {name}")
@@ -155,7 +154,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
     else:
         print(f"Project folder {folder_name} exists already.")
 
-    file_name = '{}_score_{}_{}_{}_{}_{}_{}_{:%m_%d_%H_%M_%S}.html'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
+    file_name = '{}_score_{}_{}_{}_{}_{}_{}__{:%m_%d_%H_%M_%S}.html'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                          image_params['algorithm'], image_params['lowe_ratio'], index,
                                          datetime.datetime.now())
     #Database
@@ -181,7 +180,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
             f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
-            f.write(f"<h3>      best_motif_bulk_factor:     {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
+            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True)], 0.8: bulk upload but not from single user, 1: no bulk</h3>")
             f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
@@ -243,8 +242,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
             f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
-            f.write(
-                f"<h3>      best_motif_bulk_factor:     {cluster_scores[index]['best_motif_bulk_factor']}               [1: no bulk, 0.5: bulk upload, 0.75: multiple authors but very short time (below day True)]</h3>")
+            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True)], 0.8: bulk upload but not from single user, 1: no bulk</h3>")
             f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
@@ -305,16 +303,23 @@ def calc_cluster_scores(dataset):
                 cluster
                 '''
                 similarity_motif_score = labels.iloc[0, -1]
-                latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
-                longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
-                sorted_latitudes = list(latitudes.sort_values(ascending=False))
-                sorted_longitudes = list(longitudes.sort_values(ascending=False))
-                extend_latitudes = int(sorted_latitudes[0]) - int(sorted_latitudes[-1])
-                extend_longitudes = int(sorted_longitudes[0]) - int(sorted_longitudes[-1])
-                spatial_extend = extend_latitudes + extend_longitudes
-                #if really 0 then the spatial extend is set to the lowest resolution of x and y values in the dataset
-                if spatial_extend <= 0.00001:
-                    spatial_extend = 0.00001
+                '''
+                Since oftentimes the same photos or photos taken in rapid succession are uploaded the
+                similarity score has to be 
+                '''
+                avg_motif_score = (similarity_motif_score / ((motif_size - 1) * motif_size))
+                if avg_motif_score > 1000:
+                    avg_motif_score = 1000
+                # latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
+                # longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
+                # sorted_latitudes = list(latitudes.sort_values(ascending=False))
+                # sorted_longitudes = list(longitudes.sort_values(ascending=False))
+                # extend_latitudes = int(sorted_latitudes[0]) - int(sorted_latitudes[-1])
+                # extend_longitudes = int(sorted_longitudes[0]) - int(sorted_longitudes[-1])
+                # spatial_extend = extend_latitudes + extend_longitudes
+                # #if really 0 then the spatial extend is set to the lowest resolution of x and y values in the dataset
+                # if spatial_extend <= 0.00001:
+                #     spatial_extend = 0.00001
                 # --------------------------------------------------------------------------
                 # calculate the subcluster timespans
                 # defined thresholds for timespan between oldest and newest image of a cluster:
@@ -339,13 +344,15 @@ def calc_cluster_scores(dataset):
                 # Compare timestamp all_below_day with unique_author count
                 if below_day and unique_authors == 1:
                     bulk_factor = 0.5
-                elif below_day and unique_authors > 1:
+                elif below_day or unique_authors == 1:
                     bulk_factor = 0.75
+                elif below_day and unique_authors > 1:
+                    bulk_factor = 0.8
                 else:
                     bulk_factor = 1
                 #calculate motif score for this motif cluster
                 try:
-                    motif_score = round(((similarity_motif_score / ((motif_size-1) * motif_size)) + (motif_size * 30) + (unique_authors * 30) + (0.0008 / spatial_extend)) * bulk_factor, 2)
+                    motif_score = round(avg_motif_score * motif_size * unique_authors * bulk_factor, 0)
                 except Exception as ex2:
                     print(f"Cluster score error: {ex2}")
                     print(f"Motif score set to 0")
@@ -390,14 +397,6 @@ if __name__ == '__main__':
     Database queries:
     
     '''
-    ross_query = """
-        SELECT x.photo_id, x.id_hash, x.user_nsid, x.title, x.description, x.date_uploaded, x.date_taken, x.page_url, x.download_url, x.user_tags, x.autotags, x.lat, x.lng, x.accuracy 
-        FROM data_100m as x
-        JOIN ch_lenk as y
-        ON ST_WITHIN(x.geometry, y.geom)
-        WHERE x.georeferenced = 1
-        """
-
     natura2000_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -491,24 +490,24 @@ if __name__ == '__main__':
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
     data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = ross_query
-    image_from = 'path' #options 'path': from image_storage volume; 'url': from external server that hosts images
+    db_query = wildkirchli_query
+    image_from = 'url' #options 'path': from image_storage volume; 'url': from external server that hosts images
     flickr_bbox = bbox_small
-    filter_authors_switch = True
-    filter_spatial_extend = True
+    filter_authors_switch = False
+    filter_spatial_extend = False
     max_lng_extend = 0.05 #change / neglect when running on Cluster
     max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
-    min_motives_per_cluster = None #None if this step shall be skipped
+    min_motives_per_cluster = 4 #None if this step shall be skipped
     ################################################################
     ################################################################
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'CH-Lenk'
+        project_name = 'wildkirchli_newscore_25_10'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -566,10 +565,6 @@ if __name__ == '__main__':
         else:
             print("Invalid data source")
             sys.exit(1)
-
-        #Only want to query db
-        sys.exit(0)
-
         '''
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
@@ -698,16 +693,24 @@ if __name__ == '__main__':
         final_len_before = len(subset_dfs.keys())
         if min_motives_per_cluster != None:
             for cluster_name, subset in subset_dfs.items():
-                exclude = True
+                exclude = False
                 #find unique cluster labels to filter out noise clusters
                 unique_cluster_labels = subset.multi_cluster_label.unique()
                 if len(unique_cluster_labels) != 0:
                     for label in unique_cluster_labels:
                         if label != -1:
-                            boolean_array = (subset['multi_cluster_label'] == label)
-                            len_labels = len(subset[boolean_array])
+                            label_rows = subset[subset['multi_cluster_label'] == label]
+                            len_labels = len(label_rows)
                             if len_labels >= min_motives_per_cluster:
-                                exclude = False
+                                continue
+                            else:
+                                #else drop that specific motif cluster
+                                subset.drop(label_rows.index, inplace=True) #provide indexes not boolean! Is important
+                #after filtering, check again if table still has rows otherwise delete key/df in subset_dfs dictionary
+                check = (subset['multi_cluster_label'] != -1)
+                if len(check) == 0:
+                    exclude = True
+
                 if exclude:
                     del_keys.append(cluster_name)
             #delete clusters below the minimum size
