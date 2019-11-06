@@ -5,3 +5,4 @@ This pipeline uses spatial clustering (HDBSCAN) and computer vision image analys
 
 
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_map_w_legend.png)
+The figure shows cultural and landscape motifs (orange dots) which were detected in the YFCC100M (Yahoo Flickr Creative Commons 100 Million) dataset for the Natura2000 regions. For visualisation a sub sample of the total 92 motifs are displayed with an image.
