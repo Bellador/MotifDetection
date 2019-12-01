@@ -180,7 +180,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
             f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
-            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True)], 0.8: bulk upload but not from single user, 1: no bulk</h3>")
+            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True), 0.8: bulk upload but not from single user, 1: no bulk]</h3>")
             f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
@@ -242,7 +242,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
             f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
-            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True)], 0.8: bulk upload but not from single user, 1: no bulk</h3>")
+            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True), 0.8: bulk upload but not from single user, 1: no bulk]</h3>")
             f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             # get the amount of cluster
@@ -307,7 +307,7 @@ def calc_cluster_scores(dataset):
                 Since oftentimes the same photos or photos taken in rapid succession are uploaded the
                 similarity score has to be 
                 '''
-                avg_motif_score = (similarity_motif_score / ((motif_size - 1) * motif_size))
+                avg_motif_score = (similarity_motif_score / ((motif_size-1) * motif_size))
                 if avg_motif_score > 1000:
                     avg_motif_score = 1000
                 # latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
@@ -320,6 +320,8 @@ def calc_cluster_scores(dataset):
                 # #if really 0 then the spatial extend is set to the lowest resolution of x and y values in the dataset
                 # if spatial_extend <= 0.00001:
                 #     spatial_extend = 0.00001
+
+
                 # --------------------------------------------------------------------------
                 # calculate the subcluster timespans
                 # defined thresholds for timespan between oldest and newest image of a cluster:
@@ -397,10 +399,20 @@ if __name__ == '__main__':
     Database queries:
     
     '''
+
+    ross_query = """
+    SELECT x.photo_id, x.id_hash, x.user_nsid, x.title, x.description, x.date_uploaded, x.date_taken, x.page_url, x.download_url, x.user_tags, x.autotags, x.lat, x.lng, x.accuracy
+        FROM data_100m as x
+        JOIN uk_wb_500buffer as y
+        ON ST_WITHIN(x.geometry, y.geom)
+        WHERE x.georeferenced = 1
+        AND new_data = 0
+    """
+
     natura2000_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
-        JOIN natura2000_4000_8000 as y
+        JOIN natura2000_0_4000 as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
@@ -490,8 +502,8 @@ if __name__ == '__main__':
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
     data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = wildkirchli_query
-    image_from = 'url' #options 'path': from image_storage volume; 'url': from external server that hosts images
+    db_query = ross_query
+    image_from = 'path' #options 'path': from image_storage volume; 'url': from external server that hosts images
     flickr_bbox = bbox_small
     filter_authors_switch = False
     filter_spatial_extend = False
@@ -507,7 +519,7 @@ if __name__ == '__main__':
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'wildkirchli_newscore_25_10'
+        project_name = 'UK-WB'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -565,6 +577,9 @@ if __name__ == '__main__':
         else:
             print("Invalid data source")
             sys.exit(1)
+
+        #FOR ROSS QUERY TO STOP HERE - ONLY TO QUERY DB
+        sys.exit(0)
         '''
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above

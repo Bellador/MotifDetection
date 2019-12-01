@@ -216,7 +216,8 @@ class ImageSimilarityAnalyser:
         columns = df.columns.values
         '''
         here reduce the redundancy
-        by avoiding to check the same comparisons twice                
+        by avoiding to check the same comparisons twice
+        (since similarity between img1 and img2 is the same as the similarity between img2 and img1)                
         '''
         for check1, index in enumerate(indexes):
             for check2, column in enumerate(columns):
