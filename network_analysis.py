@@ -9,7 +9,7 @@ class NetworkAnalyser:
         self.dataframe = dataframe
         self.threshold = threshold
         #check for too low threshold. Assert raised if conndition is NOT true
-        assert self.threshold > 50, "Specified threshold is lower than (min: 50, best:100) recommended to successfully identify motive images!"
+        assert self.threshold >= 10, "Specified threshold is lower than (min: 50, best:100) recommended to successfully identify motive images!"
         self.new_dataframe = self.network_analysis(dataframe, threshold=self.threshold)
         print("")
 

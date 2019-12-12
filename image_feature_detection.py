@@ -16,11 +16,12 @@ from urllib3.util import Retry
 class ImageSimilarityAnalyser:
     score_same_image = 0
 
-    def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False, image_from='path'):
+    def __init__(self, project_name, data_source, algorithm_params, subset_df, pickle=False, image_from='volume', data_dir=None):
         self.project_name = project_name
         self.data_source = data_source
         self.algorithm_params = algorithm_params
         self.image_from = image_from
+        self.data_dir = data_dir
         self.subset_df = subset_df
         self.project_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name)
         self.images_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name, f'images_{self.project_name}')
@@ -86,7 +87,7 @@ class ImageSimilarityAnalyser:
             # return the image
             return image
 
-        def path_to_image(id_hash):
+        def volume_to_image(id_hash):
             first_3b = id_hash[:3]
             sec_3b = id_hash[3:6]
             image_path = f"C:/Users/mhartman/PycharmProjects/IMAGE_SCRAPE_TEST/{first_3b}/{sec_3b}/{id_hash}.jpg"
@@ -95,6 +96,9 @@ class ImageSimilarityAnalyser:
             image = np.asarray(bytearray(content), dtype="uint8")
             image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
             return image
+
+        def path_to_image(image_dir, img):
+            return os.path.join(image_dir, img)
 
         # turn off SSL warnings
         requests.packages.urllib3.disable_warnings()
@@ -148,10 +152,10 @@ class ImageSimilarityAnalyser:
                         print(f"Sleep {amount}s due to all images raised errors")
                         time.sleep(amount)
 
-            elif self.image_from == 'path':
+            elif self.image_from == 'volume':
                 for counter, (img_id, id_hash) in enumerate(zip(ids, id_hashes), 1):
                     try:
-                        image = path_to_image(id_hash)
+                        image = volume_to_image(id_hash)
                         image_objects[img_id] = image
                         feature_dict[img_id] = {}
                         print(f'\r{counter} of {nr_images} images', end='')
@@ -175,7 +179,25 @@ class ImageSimilarityAnalyser:
                 if img_id in needed_ids:
                     image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
                     feature_dict[img_id] = {}
+
+        #using existing data directory
+        elif self.data_source == 3:
+            needed_ids = self.subset_df.index.values
+            image_dir = os.path.join(self.data_dir, f'images_{self.data_dir.split("/")[-1]}')
+            nr_images = 0
+            for img in os.listdir(image_dir):
+                nr_images += 1
+                img_id = int(img[:-4])
+                if img_id in needed_ids:
+                    img_path = path_to_image(image_dir, img)
+                    image_objects[img_id] = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                    feature_dict[img_id] = {}
+            print(f"Number of images to process: {len(needed_ids)}")
+
+
         return image_objects, feature_dict, nr_images
+
+
 
     def compute_keypoints(self):
         '''

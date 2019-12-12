@@ -1,4 +1,4 @@
-from query_flickr_api import FlickrQuerier
+# from query_flickr_api import FlickrQuerier
 from db_querier import DbQuerier
 from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalyser
@@ -7,12 +7,15 @@ from network_analysis import NetworkAnalyser
 from random import randint
 import matplotlib.pyplot as plt
 import numpy as np
-import statistics
 import warnings
 import datetime
 import os
-import sys
 import gc
+import sys
+#import Flickr Framework to query FlickrAPI and retreive images (available at: github.com/Bellador/FlickrFrame
+sys.path.insert(1, "C:/Users/mhartman/PycharmProjects/FlickrFrame")
+from flickr_framework import FlickrFrame
+
 
 def plot_clusters(subset_name, subset):
     unique_labels = subset.multi_cluster_label.unique()
@@ -83,18 +86,7 @@ def filter_authors(label, subset):
     1. iterate over subclusters
     '''
     rows_before_filter = len(subset.index.values)
-    # radomly choose to either keep the first or last record
-    rand = randint(0, 1)
-    if rand == 0:
-        to_keep = 'first'
-    elif rand == 1:
-        to_keep = 'last'
-    # postgres column_name = user_nsid
-    if data_source == 1:
-        subset = subset.drop_duplicates(subset='user_nsid', keep=to_keep)
-    # flickrAPI colum_name = author_id
-    elif data_source == 2:
-        subset = subset.drop_duplicates(subset='author_id', keep=to_keep)
+    subset = subset.drop_duplicates(subset='user_nsid', keep='first')
 
     rows_after_filter = len(subset.index.values)
 
@@ -135,7 +127,7 @@ def pickle_dataframes(index, dataframe, cluster_params, image_params, cluster_sc
     except Exception as e:
         print(f"Error: {e} occurred while pickling dataframe {index}")
 
-def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster_scores):
+def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster_scores, data_dir=None):
     '''
     create an html file that can be insepcted in the browser that links
     images contained in clusters directly to their source path for
@@ -151,8 +143,6 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
     if not os.path.exists(html_path):
         os.makedirs(html_path)
         print(f"Creating project folder {folder_name} in current directory - done.")
-    else:
-        print(f"Project folder {folder_name} exists already.")
 
     file_name = '{}_score_{}_{}_{}_{}_{}_{}__{:%m_%d_%H_%M_%S}.html'.format(cluster_scores[index]['best_motif_score'], cluster_params['algorithm'], cluster_params['min_cluster_size'], cluster_params['min_samples'],
                                          image_params['algorithm'], image_params['lowe_ratio'], index,
@@ -179,6 +169,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_size:           {cluster_scores[index]['best_motif_size']}</h3>")
             f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
             f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True), 0.8: bulk upload but not from single user, 1: no bulk]</h3>")
             f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
@@ -241,6 +232,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_size:           {cluster_scores[index]['best_motif_size']}</h3>")
             f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
             f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True), 0.8: bulk upload but not from single user, 1: no bulk]</h3>")
             f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
@@ -265,6 +257,63 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
                 for id in v:
                     img_path = os.path.join(project_path, f'images_{project_name}', str(id) + '.jpg').replace('\\', '/')
                     f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
+
+                f.write(f'</ul>\n')
+            f.write("</body>\n")
+            f.write("</html>\n")
+
+    elif data_source == 3:
+        with open(os.path.join(html_path, file_name), 'w') as f:
+            f.write("<!DOCTYPE html>\n")
+            f.write("<hmtl>\n")
+            f.write("<head>\n")
+            f.write(f"<title>Multi Cluster {index}</title>\n")
+            f.write("</head>\n")
+            f.write("<body>\n")
+            f.write(f"<h1>Detected Motifs: {index}</h1>")
+            f.write(f"<h2>Used parameters</h2>")
+            f.write("<h3>Data_source:  Existing data directory</h3>")
+            f.write(f"<h3>Data directory: {data_dir}</h3>")
+            f.write(
+                f"<h3>Filter                    Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
+            f.write(
+                f"<h3>Clustering                Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(
+                f"<h3>CV                        Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write(f"<h3>Motif network analysis    Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
+            f.write(f"<h2>Cluster score: </h2>")
+            f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
+            f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
+            f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
+            f.write(f"<h3>      best_motif_size:           {cluster_scores[index]['best_motif_size']}</h3>")
+            f.write(f"<h3>      best_motif_unique_authors:  {cluster_scores[index]['best_motif_unique_authors']}</h3>")
+            f.write(f"<h3>      penalty:     {cluster_scores[index]['best_motif_bulk_factor']}               [0.5: bulk upload from one user, 0.75: bulk upload or single user (below day True), 0.8: bulk upload but not from single user, 1: no bulk]</h3>")
+            f.write(f"<h3>      best_motif_below_a_day:     {cluster_scores[index]['best_motif_below_day']}</h3>")
+            f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
+            # get the amount of cluster
+            cluster_labels = set(dataframe.loc[:, 'multi_cluster_label'])
+            n_clusters = sum([1 for c in cluster_labels if c != -1])
+            cluster_dict = {}
+
+            for label in cluster_labels:
+                cluster_dict[label] = []
+
+            # append media objects to correct cluster
+            # images already exist locally if data_source == 3
+            image_dir = os.path.join(data_dir, f'images_{data_dir.split("/")[-1]}')
+            for photo_id, row in dataframe.iterrows():
+                image_path = f'{image_dir}/{photo_id}.jpg'
+                cluster_label = row['multi_cluster_label']
+                cluster_dict[cluster_label].append((photo_id, image_path))
+
+            for counter, (k, v) in enumerate(cluster_dict.items()):
+                f.write(f'<h2>Cluster {k}</h2>\n')
+                f.write(f'<ul>\n')
+                for tuple_ in v:
+                    photo_id = tuple_[0]
+                    img_path = tuple_[1]
+                    f.write(f'<li><img src="{img_path}" alt="{photo_id}", height="300", width="300"><h3>{photo_id}</h3></li>\n')
 
                 f.write(f'</ul>\n')
             f.write("</body>\n")
@@ -367,12 +416,14 @@ def calc_cluster_scores(dataset):
                                                         'below_day': below_day}
             best_motif_score = 0
             best_motif_label = 0
+            best_motif_size = 0
             best_motif_bulk_factor = None
             best_motif_unique_authors = 0
             best_motif_below_day = None
             for k, v in cluster_scores[sb_name].items():
                 if v['motif_score'] > best_motif_score:
                     best_motif_score = v['motif_score']
+                    best_motif_size = v['motif_size']
                     best_motif_label = k
                     best_motif_bulk_factor = v['bulk_factor']
                     best_motif_unique_authors = v['unique_authors']
@@ -381,6 +432,7 @@ def calc_cluster_scores(dataset):
             cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
             cluster_scores[sb_name]['best_motif_label'] = best_motif_label
             cluster_scores[sb_name]['best_motif_score'] = best_motif_score
+            cluster_scores[sb_name]['best_motif_size'] = best_motif_size
             cluster_scores[sb_name]['best_motif_bulk_factor'] = best_motif_bulk_factor
             cluster_scores[sb_name]['best_motif_unique_authors'] = best_motif_unique_authors
             cluster_scores[sb_name]['best_motif_below_day'] = best_motif_below_day
@@ -388,6 +440,7 @@ def calc_cluster_scores(dataset):
             cluster_scores[sb_name]['nr_subclusters'] = nr_subclusters
             cluster_scores[sb_name]['best_motif_label'] = None
             cluster_scores[sb_name]['best_motif_score'] = 0
+            cluster_scores[sb_name]['best_motif_size'] = 0
             cluster_scores[sb_name]['best_motif_bulk_factor'] = None
             cluster_scores[sb_name]['best_motif_unique_authors'] = 0
             cluster_scores[sb_name]['best_motif_below_day'] = None
@@ -399,16 +452,13 @@ if __name__ == '__main__':
     Database queries:
     
     '''
-
     ross_query = """
-    SELECT x.photo_id, x.id_hash, x.user_nsid, x.title, x.description, x.date_uploaded, x.date_taken, x.page_url, x.download_url, x.user_tags, x.autotags, x.lat, x.lng, x.accuracy
+    SELECT x.photo_id, x.id_hash, x.user_nsid,  x.download_url, x.lat, x.lng
         FROM data_100m as x
-        JOIN uk_wb_500buffer as y
+        JOIN natura2000_projected as y
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
-        AND new_data = 0
     """
-
     natura2000_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -454,6 +504,12 @@ if __name__ == '__main__':
     bbox_big = ['9.313564,47.282421,9.415497,47.285627']
     bbox_bridge_scotland = ['-6.175232,57.289046,-6.171761,57.290533']
     '''
+    Existing data directories    
+    '''
+    dir_preikestolen = "C:/Users/mhartman/PycharmProjects/FlickrFrame/preikestolen"
+    dir_ashness = "C:/Users/mhartman/PycharmProjects/FlickrFrame/ashness_bridge"
+    dir_wildkirchli = "C:/Users/mhartman/PycharmProjects/FlickrFrame/wildkirchli"
+    '''
     -----
     CLUSTERING INPUT PARAMETERS
     - min_samples: the higher the value the more conservative the clustering. Meaning that more points will be 
@@ -462,21 +518,9 @@ if __name__ == '__main__':
     '''
     cluster_params_HDBSCAN_spatial = {
         'algorithm': 'HDBSCAN',
-        'min_cluster_size': 10,
-        'min_samples': 10,
+        'min_cluster_size': 10, #10
+        'min_samples': 10, #10
         'cluster_selection_method': 'leaf' #default 'eom'
-    }
-    cluster_params_HDBSCAN_multi = {
-        'algorithm': 'HDBSCAN',
-        'min_cluster_size': 2,
-        'min_samples': 2,
-        'cluster_selection_method': 'leaf'  # default 'eom'
-    }
-    cluster_params_DBSCAN = {
-        'algorithm': 'DBSCAN',
-        'eps': 0.00015,
-        'min_samples': 10,
-        'n_jobs': 0
     }
     '''
     -----
@@ -486,7 +530,7 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 100
+        'network_threshold': 20 #10 is too low according to wildkirchli exp. -> 20 still suprising good results!
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -501,10 +545,21 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    data_source = 1 #1 = PostGIS database; 2 = Flickr API
-    db_query = ross_query
-    image_from = 'path' #options 'path': from image_storage volume; 'url': from external server that hosts images
-    flickr_bbox = bbox_small
+    project_name = 'wildkirchli_10_10_threshold_10'
+    data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
+    if data_source == 1:
+        db_query = ross_query
+        image_from = 'volume'
+    elif data_source == 2:
+        flickr_bbox = bbox_small
+        image_from = 'url'
+    elif data_source == 3:
+        data_dir = dir_wildkirchli
+        image_from = 'path'
+    else:
+        print("Invalid data_source")
+        sys.exit(1)
+    #   options 'volume': from image_storage volume; 'url': from external server that hosts images; 'path': images are in specific local path
     filter_authors_switch = False
     filter_spatial_extend = False
     max_lng_extend = 0.05 #change / neglect when running on Cluster
@@ -512,14 +567,20 @@ if __name__ == '__main__':
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
     # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
-    min_motives_per_cluster = 4 #None if this step shall be skipped
+    min_motives_per_cluster = None #None if this step shall be skipped
     ################################################################
     ################################################################
+    ################################################################
+
+
+
+
+
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         main_dir_path = os.path.dirname(os.path.realpath(__file__))
         # project_name = input("Enter a project name. Will be integrated in folder and filenames: \n")
-        project_name = 'UK-WB'
         project_path = os.path.join(main_dir_path, project_name)
 
         if not os.path.exists(project_path):
@@ -563,7 +624,7 @@ if __name__ == '__main__':
                     for file in f:
                         if file.endswith('.csv'):
                             print("Metadata for this flickr query already exists.")
-                            print("Skipping invocation of FlickrQuerier.")
+                            print("Skipping invocation of FlickrFrame.")
                             print("--" * 30)
                             to_flickrquery = False
                             data_path = os.path.join(r, file)
@@ -572,14 +633,27 @@ if __name__ == '__main__':
 
             if to_flickrquery:
                 print("About to import data from Flickr API...")
-                flickr_obj = FlickrQuerier(project_name, bbox=flickr_bbox)
-                data_path = flickr_obj.csv_output_path
+                flickrframe_obj = FlickrFrame(project_name, bbox=flickr_bbox, toget_images=True)
+                data_path = flickrframe_obj.flickrquerier_obj.csv_output_path
+
+        #use data from existing directory with csv and images
+        elif data_source == 3:
+            csv_found = False
+            for file in os.listdir(data_dir):
+                if file.endswith('.csv'):
+                    csv_found = True
+                    data_path = os.path.join(data_dir, file)
+                    break
+            if not csv_found:
+                print("No csv file found in given data_dir")
+                sys.exit(1)
+
         else:
             print("Invalid data source")
             sys.exit(1)
 
         #FOR ROSS QUERY TO STOP HERE - ONLY TO QUERY DB
-        sys.exit(0)
+        # sys.exit(0)
         '''
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
@@ -659,7 +733,10 @@ if __name__ == '__main__':
         for index, (label, subset) in enumerate(subset_dfs.items(), 1):
             print("##" * 30)
             print(f"{index} of {len(subset_dfs.keys())} Processing spatial clustering subset: {label}")
-            cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset, image_from=image_from)
+            if 'data_dir' in locals():
+                cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset, image_from=image_from, data_dir=data_dir)
+            else:
+                cv_obj = ImageSimilarityAnalyser(project_name, data_source, image_similarity_params, subset, image_from=image_from, data_dir=None)
             subset_dfs[label] = cv_obj.subset_df
             del cv_obj
             gc.collect()
@@ -758,7 +835,10 @@ if __name__ == '__main__':
         for k, subset in subset_dfs.items():
             pickle_dataframes(k, subset, spatial_clustering_params, image_similarity_params, cluster_scores)
             print("--" * 30)
-            cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params, cluster_scores)
+            if 'data_dir' in locals():
+                cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params, cluster_scores, data_dir=data_dir)
+            else:
+                cluster_html_inspect(k, subset, spatial_clustering_params, image_similarity_params, cluster_scores)
             print("--" * 30)
         '''
         Plot

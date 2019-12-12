@@ -39,7 +39,8 @@ class ClusterMaster:
             (dublicates were seen in the final dataframes and trasted back to the original sql query output.
             Exact reason is not know...)
             '''
-            dataframe.drop_duplicates('id_hash', keep='first', inplace=True)
+            # dataframe.drop_duplicates('photo_id', keep='first', inplace=True)
+            dataframe = dataframe.loc[~dataframe.index.duplicated(keep='first')]
             length_after = len(dataframe.index.values)
             print("--" * 30)
             print("Check for duplicates in original dataframe...")
