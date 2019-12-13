@@ -197,8 +197,6 @@ class ImageSimilarityAnalyser:
 
         return image_objects, feature_dict, nr_images
 
-
-
     def compute_keypoints(self):
         '''
         compute the keypoints and the corresponding descriptors

@@ -357,8 +357,8 @@ def calc_cluster_scores(dataset):
                 similarity score has to be 
                 '''
                 avg_motif_score = (similarity_motif_score / ((motif_size-1) * motif_size))
-                if avg_motif_score > 1000:
-                    avg_motif_score = 1000
+                if avg_motif_score > 100:
+                    avg_motif_score = 100
                 # latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
                 # longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
                 # sorted_latitudes = list(latitudes.sort_values(ascending=False))
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 20 #10 is too low according to wildkirchli exp. -> 20 still suprising good results!
+        'network_threshold': 17 #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -545,7 +545,7 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_name = 'wildkirchli_10_10_threshold_10'
+    project_name = 'ashness_10_10_threshold_17_avgmotifscore_100'
     data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
     if data_source == 1:
         db_query = ross_query
@@ -554,7 +554,7 @@ if __name__ == '__main__':
         flickr_bbox = bbox_small
         image_from = 'url'
     elif data_source == 3:
-        data_dir = dir_wildkirchli
+        data_dir = dir_ashness
         image_from = 'path'
     else:
         print("Invalid data_source")
@@ -571,8 +571,6 @@ if __name__ == '__main__':
     ################################################################
     ################################################################
     ################################################################
-
-
 
 
 
