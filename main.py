@@ -321,7 +321,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
 
     print(f"Created inspection html file {file_name} in folder {folder_name}")
 
-def calc_cluster_scores(dataset):
+def calc_cluster_scores(dataset, avgmotifscore_upperbound):
     '''
     Use these scores to evaluete and sort the final cluster outputs
     The scores will be added to the html and pickle dataframe dump files
@@ -357,27 +357,9 @@ def calc_cluster_scores(dataset):
                 similarity score has to be 
                 '''
                 avg_motif_score = (similarity_motif_score / ((motif_size-1) * motif_size))
-                if avg_motif_score > 100:
-                    avg_motif_score = 100
-                # latitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lat']
-                # longitudes = sb_data[sb_data['multi_cluster_label'] == motif_label]['lng']
-                # sorted_latitudes = list(latitudes.sort_values(ascending=False))
-                # sorted_longitudes = list(longitudes.sort_values(ascending=False))
-                # extend_latitudes = int(sorted_latitudes[0]) - int(sorted_latitudes[-1])
-                # extend_longitudes = int(sorted_longitudes[0]) - int(sorted_longitudes[-1])
-                # spatial_extend = extend_latitudes + extend_longitudes
-                # #if really 0 then the spatial extend is set to the lowest resolution of x and y values in the dataset
-                # if spatial_extend <= 0.00001:
-                #     spatial_extend = 0.00001
+                if avg_motif_score > avgmotifscore_upperbound:
+                    avg_motif_score = avgmotifscore_upperbound
 
-
-                # --------------------------------------------------------------------------
-                # calculate the subcluster timespans
-                # defined thresholds for timespan between oldest and newest image of a cluster:
-                # less 1 day (86400s) -> bulk upload from single person, or event documented by many
-                # to check which is true (one or more authors) check unique authors in conjunction:
-                # Factor: single author (bulk upload) -> 0.5
-                # Factor: multiple authors (bulk event upload) -> 0.75
                 timestamps = sb_data.loc[sb_data['multi_cluster_label'] == motif_label]['date_uploaded']
                 sordted_timestamps = list(timestamps.sort_values(ascending=False))
                 try:
@@ -530,7 +512,8 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 17 #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'network_threshold': 16, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'avgmotif_score_bound': 100 #relevant for calc_motif_score function
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -545,7 +528,12 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_name = 'ashness_10_10_threshold_17_avgmotifscore_100'
+    project_desc = 'ashness'
+    project_name = f"""{project_desc}\
+_{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
+_{cluster_params_HDBSCAN_spatial['min_samples']}\
+_threshold_{SIFT_params['network_threshold']}\
+_avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
     data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
     if data_source == 1:
         db_query = ross_query
@@ -819,7 +807,7 @@ if __name__ == '__main__':
             ...
         '''
         #dictionary with cluster id key and its score as value
-        cluster_scores = calc_cluster_scores(subset_dfs)
+        cluster_scores = calc_cluster_scores(subset_dfs, SIFT_params['avgmotif_score_bound'])
         '''
         6. Dumping all dataframes to pickle
         in the project folder
