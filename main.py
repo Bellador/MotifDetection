@@ -448,7 +448,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     switzerland_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -456,7 +455,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     wildkirchli_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -464,7 +462,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     loewendenkmal_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -512,8 +509,8 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 16, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
-        'avgmotif_score_bound': 100 #relevant for calc_motif_score function
+        'network_threshold': 20, #100 if large area (lower recall); 20 if smaller area
+        'avgmotif_score_bound': 100 #800 if large area (lower recall); 100 if smaller area
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -528,7 +525,7 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_desc = 'ashness'
+    project_desc = 'preikestolen'
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
 _{cluster_params_HDBSCAN_spatial['min_samples']}\
@@ -542,7 +539,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
         flickr_bbox = bbox_small
         image_from = 'url'
     elif data_source == 3:
-        data_dir = dir_ashness
+        data_dir = dir_preikestolen
         image_from = 'path'
     else:
         print("Invalid data_source")
