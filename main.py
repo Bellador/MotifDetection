@@ -513,6 +513,7 @@ if __name__ == '__main__':
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
         'network_threshold': 16, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'motif_agreement': 2, #Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
         'avgmotif_score_bound': 100 #relevant for calc_motif_score function
     }
     SURF_params = {
@@ -755,7 +756,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
         print("##" * 30)
         for label, subset in subset_dfs.items():
             print(f"\rNetwork analysis of subset: {label}", end='')
-            net_analysis = NetworkAnalyser(label, subset, threshold=image_similarity_params['network_threshold'])
+            net_analysis = NetworkAnalyser(label, subset, threshold=image_similarity_params['network_threshold'], m_agreement=image_similarity_params['motif_agreement'])
             subset_dfs[label] = net_analysis.new_dataframe
             del net_analysis
             gc.collect()
