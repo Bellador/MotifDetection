@@ -356,7 +356,7 @@ def calc_cluster_scores(dataset, avgmotifscore_upperbound):
                 Since oftentimes the same photos or photos taken in rapid succession are uploaded the
                 similarity score has to be 
                 '''
-                avg_motif_score = (similarity_motif_score / ((motif_size-1) * motif_size))
+                avg_motif_score = (similarity_motif_score / (motif_size))
                 if avg_motif_score > avgmotifscore_upperbound:
                     avg_motif_score = avgmotifscore_upperbound
 
@@ -367,7 +367,8 @@ def calc_cluster_scores(dataset, avgmotifscore_upperbound):
                         below_day = True
                     else:
                         below_day = False
-                except Exception:
+                except Exception as e:
+                    print(f"Error: {e}")
                     below_day = True
                 #---------------------------------------------------------------------------
                 #calculate number of unique authors per subcluster and take the mean
@@ -448,7 +449,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     switzerland_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -456,7 +456,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     wildkirchli_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -464,7 +463,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     loewendenkmal_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -512,9 +510,9 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 20, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'network_threshold': 10, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
         'motif_agreement': 2, #Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
-        'avgmotif_score_bound': 100 #relevant for calc_motif_score function
+        'avgmotif_score_multiplier': 5 #times the network_threshold - relevant for calc_motif_score function
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -529,14 +527,14 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_desc = 'wildkirchli_test_m_agreement'
+    project_desc = 'wildkirchli_test_m_agreement_nofilter'
 
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
 _{cluster_params_HDBSCAN_spatial['min_samples']}\
 _threshold_{SIFT_params['network_threshold']}\
 _motifagreement_{SIFT_params['motif_agreement']}\
-_avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
+_avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_threshold']}"""
 
     data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
     if data_source == 1:
@@ -552,8 +550,8 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
         print("Invalid data_source")
         sys.exit(1)
     #   options 'volume': from image_storage volume; 'url': from external server that hosts images; 'path': images are in specific local path
-    filter_authors_switch = True
-    filter_spatial_extend = True
+    filter_authors_switch = False
+    filter_spatial_extend = False
     max_lng_extend = 0.05 #change / neglect when running on Cluster
     max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
@@ -789,7 +787,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
             ...
         '''
         #dictionary with cluster id key and its score as value
-        cluster_scores = calc_cluster_scores(subset_dfs, SIFT_params['avgmotif_score_bound'])
+        cluster_scores = calc_cluster_scores(subset_dfs, (SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_threshold']))
         '''
         6. Dumping all dataframes to pickle
         in the project folder

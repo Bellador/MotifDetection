@@ -13,7 +13,6 @@ class NetworkAnalyser:
         assert self.threshold >= 10, "Specified threshold is lower than (min: 50, best:100) recommended to successfully identify motive images!"
         self.network_analysis()
         self.new_dataframe = self.dataframe
-        print("")
 
     def network_analysis(self):
         try:
@@ -95,7 +94,7 @@ class NetworkAnalyser:
             boolean_array = self.dataframe.multi_cluster_label.isnull()
             self.dataframe.loc[boolean_array, 'multi_cluster_label'] = -1
 
-            print(f"iterations {iterations}; noise: {len(noise)}; motifs: {len(motifs.keys())}")
+            print(f"\niterations {iterations}; noise: {len(noise)}; motifs: {len(motifs.keys())}")
 
         except Exception as e:
             '''
