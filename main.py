@@ -512,7 +512,7 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 16, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'network_threshold': 20, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
         'motif_agreement': 2, #Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
         'avgmotif_score_bound': 100 #relevant for calc_motif_score function
     }
@@ -529,12 +529,15 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_desc = 'ashness'
+    project_desc = 'wildkirchli_test_m_agreement'
+
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
 _{cluster_params_HDBSCAN_spatial['min_samples']}\
 _threshold_{SIFT_params['network_threshold']}\
+_motifagreement_{SIFT_params['motif_agreement']}\
 _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
+
     data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
     if data_source == 1:
         db_query = ross_query
@@ -543,14 +546,14 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
         flickr_bbox = bbox_small
         image_from = 'url'
     elif data_source == 3:
-        data_dir = dir_ashness
+        data_dir = dir_wildkirchli
         image_from = 'path'
     else:
         print("Invalid data_source")
         sys.exit(1)
     #   options 'volume': from image_storage volume; 'url': from external server that hosts images; 'path': images are in specific local path
-    filter_authors_switch = False
-    filter_spatial_extend = False
+    filter_authors_switch = True
+    filter_spatial_extend = True
     max_lng_extend = 0.05 #change / neglect when running on Cluster
     max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
@@ -560,9 +563,6 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
     ################################################################
     ################################################################
     ################################################################
-
-
-
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -730,26 +730,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
 
         print("Image analysis for all spatial sub-clusters - done.")
         '''
-        4. Create tag vocabulary (bag of words approach) for
-        all media object tags inside a spatial cluster
-        and add the tf-idf values as features to the cluster_dataframe
-        IMPORTANT TO RE-ITERATE OVER THE SUBSET TO GET THE UPDATED REFERENCES FOR 'SUBSET'!
-        '''
-        for label, subset in subset_dfs.items():
-            pass
-        #############!!!!!DEBRICATED!!!!!########################################################
-        # '''
-        # 5. second layer Clusering
-        # with image similarity and tag frequency input features
-        # '''
-        # for subset in subset_dfs:
-        #     print("##" * 30)
-        #     print(f"Multi dimensional clustering of subset: {subset}")
-        #     multi_cluster_obj = ClusterMaster(multi_clustering_params, subset_df=subset_dfs[subset],
-        #                                 spatial_clustering=False, multi_clustering_inc_coordinates=True, used_lowe_ratio=image_similarity_params['lowe_ratio'])
-        #     subset_dfs[subset] = multi_cluster_obj.df  # is named df (not sub_df) in the class to handle both cluster methods
-        '''
-        5. Network analysis
+        4. Network analysis
         Finding and linking scores above a given threshold to clusters
         which shall represent possible motives in the spatial clusters
         '''
@@ -761,7 +742,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
             del net_analysis
             gc.collect()
         '''
-        5.1
+        4.1
         Check the final sub-cluster (exc. Noise) sizes to be above the defined
         min_motives_clusters value
         if None no filter shall be applied
@@ -799,7 +780,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
             print(f"Removed {final_len_before-final_len_after} of {final_len_before} sub-clusters")
             print(f"Remaining: {final_len_after}")
         '''
-        6. Cluster Scores
+        5. Cluster Scores
         calculate and evaluate clusters based on certain parameters related to the included sub-clusters:
             - amount of authors
             - timespan between oldest and newest media object (temporarily neglected)
