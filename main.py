@@ -157,15 +157,25 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write("</head>\n")
             f.write("<body>\n")
             f.write(f"<h1>Detected Motifs: {index}</h1>")
-            f.write(f"<h2>Used parameters</h2>")
-            f.write(f"<h3>Data_source: PostgresqlDB</h3>")
+            f.write("<h2>Used parameters</h2>")
+            f.write("<h3>Data source: PostgresqlDB</h3>")
             f.write(f"<h3>SQL_query: {db_query}</h3>")
-            f.write(f"<h3>Filter                    Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
-            f.write(f"<h3>Clustering                Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
-            f.write(f"<h3>CV                        Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
-            f.write(f"<h3>Motif network analysis    Threshold: {image_params['network_threshold']}</h3>")
+            f.write("<h3><u>Filter</u></h3>")
+            f.write(f"          <h3>Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}</h3>")
+            f.write(f"          <h3>Authors: {filter_authors_switch}</h3>")
+            f.write(f"          <h3>Min. motif size: {min_motives_per_cluster}</h3>")
+            f.write("<h3><u>Spatial Clustering</u></h3>")
+            f.write(f"          <h3>Algorithm: {cluster_params['algorithm']}</h3>")
+            f.write(f"          <h3>Min_cluster_size: {cluster_params['min_cluster_size']}</h3>")
+            f.write(f"          <h3>Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(f"<h3><u>Computer Vision</u></h3>")
+            f.write(f"          <h3>Algorithm: {image_params['algorithm']}</h3>")
+            f.write(f"          <h3>Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write("<h3><u>Motif network analysis</u></h3>")
+            f.write(f"          <h3>Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [the amount of images each image in a motif cluster has that are above the given similarity threshold]</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
-            f.write(f"<h2>Cluster score </h2>")
+            f.write(f"<h2>Motifs</h2>")
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
             f.write(f"<h3>      best_motif_label:           {cluster_scores[index]['best_motif_label']}</h3>")
             f.write(f"<h3>      best_motif_score:           {cluster_scores[index]['best_motif_score']}</h3>")
@@ -218,15 +228,22 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write("<body>\n")
             f.write(f"<h1>Detected Motifs: {index}</h1>")
             f.write(f"<h2>Used parameters</h2>")
-            f.write(f"<h3>Data_source:  FlickrAPI</h3>")
+            f.write(f"<h3>Data source:  FlickrAPI</h3>")
             f.write(f"<h3>Bounding box: {flickr_bbox}</h3>")
-            f.write(
-                f"<h3>Filter                    Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
-            f.write(
-                f"<h3>Clustering                Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
-            f.write(
-                f"<h3>CV                        Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
-            f.write(f"<h3>Motif network analysis    Threshold: {image_params['network_threshold']}</h3>")
+            f.write("<h3><u>Filter</u></h3>")
+            f.write(f"          <h3>Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}</h3>")
+            f.write(f"          <h3>Authors: {filter_authors_switch}</h3>")
+            f.write(f"          <h3>Min. motif size: {min_motives_per_cluster}</h3>")
+            f.write("<h3><u>Spatial Clustering</u></h3>")
+            f.write(f"          <h3>Algorithm: {cluster_params['algorithm']}</h3>")
+            f.write(f"          <h3>Min_cluster_size: {cluster_params['min_cluster_size']}</h3>")
+            f.write(f"          <h3>Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(f"<h3><u>Computer Vision</u></h3>")
+            f.write(f"          <h3>Algorithm: {image_params['algorithm']}</h3>")
+            f.write(f"          <h3>Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write("<h3><u>Motif network analysis</u></h3>")
+            f.write(f"          <h3>Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [the amount of images each image in a motif cluster has that are above the given similarity threshold]</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
@@ -272,15 +289,22 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write("<body>\n")
             f.write(f"<h1>Detected Motifs: {index}</h1>")
             f.write(f"<h2>Used parameters</h2>")
-            f.write("<h3>Data_source:  Existing data directory</h3>")
+            f.write("<h3>Data source:  Existing data directory</h3>")
             f.write(f"<h3>Data directory: {data_dir}</h3>")
-            f.write(
-                f"<h3>Filter                    Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}; Authors: {filter_authors_switch}; Min_motifs: {min_motives_per_cluster}</h3>")
-            f.write(
-                f"<h3>Clustering                Algorithm: {cluster_params['algorithm']}; Min_cluster_size: {cluster_params['min_cluster_size']}, Min_samples: {cluster_params['min_samples']}</h3>")
-            f.write(
-                f"<h3>CV                        Algorithm: {image_params['algorithm']}; Lowe_ration: {image_params['lowe_ratio']}</h3>")
-            f.write(f"<h3>Motif network analysis    Threshold: {image_params['network_threshold']}</h3>")
+            f.write("<h3><u>Filter</u></h3>")
+            f.write(f"          <h3>Spatial extend: {filter_spatial_extend}, lng {max_lng_extend}, lat {max_lat_extend}</h3>")
+            f.write(f"          <h3>Authors: {filter_authors_switch}</h3>")
+            f.write(f"          <h3>Min. motif size: {min_motives_per_cluster}</h3>")
+            f.write("<h3><u>Spatial Clustering</u></h3>")
+            f.write(f"          <h3>Algorithm: {cluster_params['algorithm']}</h3>")
+            f.write(f"          <h3>Min_cluster_size: {cluster_params['min_cluster_size']}</h3>")
+            f.write(f"          <h3>Min_samples: {cluster_params['min_samples']}</h3>")
+            f.write(f"<h3><u>Computer Vision</u></h3>")
+            f.write(f"          <h3>Algorithm: {image_params['algorithm']}</h3>")
+            f.write(f"          <h3>Lowe_ration: {image_params['lowe_ratio']}</h3>")
+            f.write("<h3><u>Motif network analysis</u></h3>")
+            f.write(f"          <h3>Threshold: {image_params['network_threshold']}</h3>")
+            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [the amount of images each image in a motif cluster has that are above the given similarity threshold]</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
@@ -356,7 +380,7 @@ def calc_cluster_scores(dataset, avgmotifscore_upperbound):
                 Since oftentimes the same photos or photos taken in rapid succession are uploaded the
                 similarity score has to be 
                 '''
-                avg_motif_score = (similarity_motif_score / ((motif_size-1) * motif_size))
+                avg_motif_score = (similarity_motif_score / (motif_size))
                 if avg_motif_score > avgmotifscore_upperbound:
                     avg_motif_score = avgmotifscore_upperbound
 
@@ -367,7 +391,8 @@ def calc_cluster_scores(dataset, avgmotifscore_upperbound):
                         below_day = True
                     else:
                         below_day = False
-                except Exception:
+                except Exception as e:
+                    print(f"Error: {e}")
                     below_day = True
                 #---------------------------------------------------------------------------
                 #calculate number of unique authors per subcluster and take the mean
@@ -448,7 +473,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     switzerland_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -456,7 +480,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     wildkirchli_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -464,7 +487,6 @@ if __name__ == '__main__':
         ON ST_WITHIN(x.geometry, y.geom)
         WHERE x.georeferenced = 1
         """
-
     loewendenkmal_query = """
         SELECT x.photo_id, x.id_hash, x.user_nsid, x.download_url, x.date_uploaded ,x.lat, x.lng
         FROM data_100m as x
@@ -512,9 +534,9 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 16, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
-        'motif_agreement': 2, #Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
-        'avgmotif_score_bound': 100 #relevant for calc_motif_score function
+        'network_threshold': 20, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'motif_agreement': 3, #Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
+        'avgmotif_score_multiplier': 5 #times the network_threshold - relevant for calc_motif_score function
     }
     SURF_params = {
         'algorithm': 'SURF',
@@ -529,12 +551,15 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_desc = 'ashness'
+    project_desc = 'hmtltest_wildkirchli'
+
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
 _{cluster_params_HDBSCAN_spatial['min_samples']}\
 _threshold_{SIFT_params['network_threshold']}\
-_avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
+_motifagreement_{SIFT_params['motif_agreement']}\
+_avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_threshold']}"""
+
     data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
     if data_source == 1:
         db_query = ross_query
@@ -543,7 +568,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
         flickr_bbox = bbox_small
         image_from = 'url'
     elif data_source == 3:
-        data_dir = dir_ashness
+        data_dir = dir_wildkirchli
         image_from = 'path'
     else:
         print("Invalid data_source")
@@ -560,9 +585,6 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
     ################################################################
     ################################################################
     ################################################################
-
-
-
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -730,26 +752,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
 
         print("Image analysis for all spatial sub-clusters - done.")
         '''
-        4. Create tag vocabulary (bag of words approach) for
-        all media object tags inside a spatial cluster
-        and add the tf-idf values as features to the cluster_dataframe
-        IMPORTANT TO RE-ITERATE OVER THE SUBSET TO GET THE UPDATED REFERENCES FOR 'SUBSET'!
-        '''
-        for label, subset in subset_dfs.items():
-            pass
-        #############!!!!!DEBRICATED!!!!!########################################################
-        # '''
-        # 5. second layer Clusering
-        # with image similarity and tag frequency input features
-        # '''
-        # for subset in subset_dfs:
-        #     print("##" * 30)
-        #     print(f"Multi dimensional clustering of subset: {subset}")
-        #     multi_cluster_obj = ClusterMaster(multi_clustering_params, subset_df=subset_dfs[subset],
-        #                                 spatial_clustering=False, multi_clustering_inc_coordinates=True, used_lowe_ratio=image_similarity_params['lowe_ratio'])
-        #     subset_dfs[subset] = multi_cluster_obj.df  # is named df (not sub_df) in the class to handle both cluster methods
-        '''
-        5. Network analysis
+        4. Network analysis
         Finding and linking scores above a given threshold to clusters
         which shall represent possible motives in the spatial clusters
         '''
@@ -761,7 +764,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
             del net_analysis
             gc.collect()
         '''
-        5.1
+        4.1
         Check the final sub-cluster (exc. Noise) sizes to be above the defined
         min_motives_clusters value
         if None no filter shall be applied
@@ -799,7 +802,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
             print(f"Removed {final_len_before-final_len_after} of {final_len_before} sub-clusters")
             print(f"Remaining: {final_len_after}")
         '''
-        6. Cluster Scores
+        5. Cluster Scores
         calculate and evaluate clusters based on certain parameters related to the included sub-clusters:
             - amount of authors
             - timespan between oldest and newest media object (temporarily neglected)
@@ -808,7 +811,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_bound']}"""
             ...
         '''
         #dictionary with cluster id key and its score as value
-        cluster_scores = calc_cluster_scores(subset_dfs, SIFT_params['avgmotif_score_bound'])
+        cluster_scores = calc_cluster_scores(subset_dfs, (SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_threshold']))
         '''
         6. Dumping all dataframes to pickle
         in the project folder
