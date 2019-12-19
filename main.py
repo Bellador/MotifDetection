@@ -173,7 +173,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"          <h3>Lowe_ration: {image_params['lowe_ratio']}</h3>")
             f.write("<h3><u>Motif network analysis</u></h3>")
             f.write(f"          <h3>Threshold: {image_params['network_threshold']}</h3>")
-            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [the amount of images each image in a motif cluster has that are above the given similarity threshold]</h3>")
+            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [percentual amount of images (calculated from the spatial cluster size) each image in a motif cluster has that are above the given similarity threshold]</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Motifs</h2>")
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
@@ -243,7 +243,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"          <h3>Lowe_ration: {image_params['lowe_ratio']}</h3>")
             f.write("<h3><u>Motif network analysis</u></h3>")
             f.write(f"          <h3>Threshold: {image_params['network_threshold']}</h3>")
-            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [the amount of images each image in a motif cluster has that are above the given similarity threshold]</h3>")
+            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [percentual amount of images (calculated from the spatial cluster size) each image in a motif cluster has that are above the given similarity threshold]</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
@@ -304,7 +304,7 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
             f.write(f"          <h3>Lowe_ration: {image_params['lowe_ratio']}</h3>")
             f.write("<h3><u>Motif network analysis</u></h3>")
             f.write(f"          <h3>Threshold: {image_params['network_threshold']}</h3>")
-            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [the amount of images each image in a motif cluster has that are above the given similarity threshold]</h3>")
+            f.write(f"          <h3>Agreement: {image_params['motif_agreement']}      [percentual amount of images (calculated from the spatial cluster size) each image in a motif cluster has that are above the given similarity threshold]</h3>")
             f.write(f"<h3>--------------------------------------------------------------------------------</h3>")
             f.write(f"<h2>Cluster score: </h2>")
             f.write(f"<h3>      nr_subclusters:             {cluster_scores[index]['nr_subclusters']}</h3>")
@@ -534,8 +534,8 @@ if __name__ == '__main__':
     SIFT_params = {
         'algorithm': 'SIFT',
         'lowe_ratio': 0.7,
-        'network_threshold': 20, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
-        'motif_agreement': 3, #Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
+        'network_threshold': 15, #10 is too low according to wildkirchli exp. -> 20 still suprising good results!, 100 to conservative!
+        'motif_agreement': 5,#percent #NEW: relative defined according to the individual spatial cluster size. Each image in a motif cluster must pocess this number of images to which it is similar to -> addresses outliers/noise
         'avgmotif_score_multiplier': 5 #times the network_threshold - relevant for calc_motif_score function
     }
     SURF_params = {
@@ -551,7 +551,7 @@ if __name__ == '__main__':
     ##############################################################
     ####################ADJUST#PARAMETERS#########################
     ##############################################################
-    project_desc = 'hmtltest_wildkirchli'
+    project_desc = 'wildkirchli_rel_m_agreement'
 
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
