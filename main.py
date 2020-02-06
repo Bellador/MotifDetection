@@ -550,10 +550,10 @@ if __name__ == '__main__':
         'lowe_ratio': 0.7,
         'network_threshold': 100
     }
-    ##############################################################
-    ####################ADJUST#PARAMETERS#########################
-    ##############################################################
-    project_desc = 'wildkirchli_rel_min_agreement_3_m_agreement_5_5'
+##############################################################
+####################ADJUST#PARAMETERS#########################
+##############################################################
+    project_desc = 'ashness_rel_min_agreement_3_m_agreement_5_5'
 
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
@@ -567,10 +567,10 @@ _avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_th
         db_query = ross_query
         image_from = 'volume'
     elif data_source == 2:
-        flickr_bbox = bbox_small
+        flickr_bbox = bbox_wildkirchli
         image_from = 'url'
     elif data_source == 3:
-        data_dir = dir_wildkirchli
+        data_dir = dir_ashness
         image_from = 'path'
     else:
         print("Invalid data_source")
