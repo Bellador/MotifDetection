@@ -16,5 +16,7 @@ This pipeline uses spatial clustering (HDBSCAN) and computer vision image analys
 3. Adjust db_querier.py which handles database handling and querying if a database shall be used as data storage for the pipeline
 4. Run main.py
 
-![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_map_w_legend.png)
+![alt text](https://github.com/Bellador/MotiveDetection/blob/master/map_v2.png)
 The map shows the spatial distribution and occurrence of the motifs by our processing pipeline in the Natura 2000 protected areas. In total 119 motifs were identified of which 68 are cultural motifs, 36 natual motifs and 15 false positive motifs. All displayed motifs contain a minimum of five images by a minimum of five unique authors. The data foundation for this map is the updated Yahoo Flickr Creative Commons 100 Million dataset. For visualisation purposes a sub sample of the 119 motifs are displayed with an image while indicating their motif type in color
+![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure.png)
+Visual examples for identified a cultur and nature motif
