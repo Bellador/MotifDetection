@@ -28,7 +28,7 @@ We added a script called 'geomap_filter.py' to the repo which makes further proc
 
 
 ## Processed Results
-The following results were based on an individually updated Yahoo Flickr Creative Commons 100 Million Database (YFCC100m) for the Nature 2000 protected areas of Europe.
+The following results were based on an individually updated version of the original Yahoo Flickr Creative Commons 100 Million Database (YFCC100m at https://multimediacommons.wordpress.com/yfcc100m-core-dataset/). The research area was set exclusively to the Nature 2000 protected areas of Europe (see https://ec.europa.eu/environment/nature/natura2000/index_en.htm).
 
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/map_v2.png)
 The map shows the spatial distribution and occurrence of the motifs by our processing pipeline in the Natura 2000 protected areas. In total 119 motifs were identified of which 68 are cultural motifs, 36 natual motifs and 15 false positive motifs. All displayed motifs contain a minimum of five images by a minimum of five unique authors. The data foundation for this map is the updated Yahoo Flickr Creative Commons 100 Million dataset. For visualisation purposes a sub sample of the 119 motifs are displayed with an image while indicating their motif type in color
