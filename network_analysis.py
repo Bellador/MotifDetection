@@ -4,15 +4,25 @@ import matplotlib.pyplot as plt
 
 class NetworkAnalyser:
 
-    def __init__(self, subset_name, dataframe, threshold=100, m_agreement=2):
+    def __init__(self, subset_name, dataframe, threshold=100, m_agreement=5, min_rel_m_agreement=3):
         self.subset_name = subset_name
         self.dataframe = dataframe
         self.threshold = threshold
-        self.m_agreement = m_agreement
+        self.m_agreement = m_agreement #percentage of the spatial cluster size
+        self.min_rel_m_agreement = min_rel_m_agreement
+        self.rel_m_agreement = self.calc_relative_m_agreement()
         #check for too low threshold. Assert raised if conndition is NOT true
         assert self.threshold >= 10, "Specified threshold is lower than (min: 50, best:100) recommended to successfully identify motive images!"
         self.network_analysis()
         self.new_dataframe = self.dataframe
+
+    def calc_relative_m_agreement(self):
+        df_size = len(self.dataframe.index.values)
+        rel_m_agreement = int(round(df_size * (self.m_agreement / 100), 0))
+
+        if rel_m_agreement < self.min_rel_m_agreement:
+            rel_m_agreement = self.min_rel_m_agreement
+        return rel_m_agreement
 
     def network_analysis(self):
         try:
@@ -45,7 +55,7 @@ class NetworkAnalyser:
                 neglected = []
                 #find images with fewer neighbours than demanded by m_agereement
                 for k, neighbours in similarities.items():
-                    if len(neighbours) < self.m_agreement:
+                    if len(neighbours) < self.rel_m_agreement:
                         neglected.append(k)
                 #delete neglected keys
                 for neg in neglected:
@@ -74,6 +84,7 @@ class NetworkAnalyser:
                     #add images from the neighbours that are not yet processed also to the same motif cluster
                     for e in motifs[counter]['entities']:
                         for neighbour_n in similarities[e]:
+                            #neighbour_n[0] is the image_id
                             if neighbour_n[0] not in processed:
                                 motifs[counter]['entities'].append(neighbour_n[0])
                                 motifs[counter]['motif_score'] += neighbour_n[1]
