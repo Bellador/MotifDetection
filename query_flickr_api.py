@@ -16,10 +16,9 @@ class FlickrQuerier:
     This is a bug/feature (https://www.flickr.com/groups/51035612836@N01/discuss/72157654309722194/)
     Therefore, queries have to be constructed in a way that less than 4'000 are returned.
     '''
-    path_CREDENTIALS = "C:/Users/mhartman/PycharmProjects/MotiveDetection/FLICKR_API_KEY.txt"
-    path_saveimages_wildkirchli = "C:/Users/mhartman/Documents/100mDataset/wildkirchli_images/"
-    path_LOG = "C:/Users/mhartman/PycharmProjects/MotiveDetection/LOG_FLICKR_API.txt"
-    # path_CSV = "C:/Users/mhartman/PycharmProjects/MotiveDetection/wildkirchli_metadata.csv"
+    path_CREDENTIALS = "C:/Users/<user>/PycharmProjects/MotiveDetection/FLICKR_API_KEY.txt"
+    path_saveimages_wildkirchli = "C:/Users<user>/Documents/100mDataset/wildkirchli_images/"
+    path_LOG = "C:/Users/<user>/PycharmProjects/MotiveDetection/LOG_FLICKR_API.txt"
 
     class Decorators:
         # decorator to wrap around functions to log if they are being called
@@ -95,7 +94,6 @@ class FlickrQuerier:
             try:
                 photos = flickr.photos.search(bbox=self.bbox, min_upload_date=self.min_upload_date, max_upload_date=self.max_upload_date, per_page=250) #is_, accuracy=12, commons=True, page=1, min_taken_date='YYYY-MM-DD HH:MM:SS'
                 break
-            # print(json.dumps(json.loads(photos.decode('utf-8')), indent=2))
             except Exception as e:
                 print("*" * 30)
                 print("*" * 30)
@@ -151,7 +149,6 @@ class FlickrQuerier:
 
         for index, id in enumerate(ids):
             results = json.loads(flickr.photos.getSizes(photo_id=id).decode('utf-8'))
-            # print(json.dumps(json.loads(results.decode('utf-8')), indent=2))
             try:
                 # Medium 640 image size url
                 url_medium = results['sizes']['size'][6]['source']

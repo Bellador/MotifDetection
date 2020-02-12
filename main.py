@@ -1,4 +1,3 @@
-# from query_flickr_api import FlickrQuerier
 from db_querier import DbQuerier
 from clustering import ClusterMaster
 from image_feature_detection import ImageSimilarityAnalyser
@@ -11,7 +10,7 @@ import os
 import gc
 import sys
 #import Flickr Framework to query FlickrAPI and retreive images (available at: github.com/Bellador/FlickrFrame
-sys.path.insert(1, "C:/Users/mhartman/PycharmProjects/FlickrFrame")
+sys.path.insert(1, "C:/Users/<user>/PycharmProjects/FlickrFrame")
 from flickr_framework import FlickrFrame
 
 

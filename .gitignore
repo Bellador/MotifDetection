@@ -9,7 +9,7 @@
 !image_feature_detection.py
 !network_analysis.py
 !query_flickr_api.py
-!geomap_filter_for_motifsize.py
+!geomap_filter.py
 !map_v2.png
 !motif_type_figure.png
 !requirements.txt

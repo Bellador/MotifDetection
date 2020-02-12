@@ -8,19 +8,7 @@ import pandas as pd
 from random import uniform
 from statistics import mean
 
-# root_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection" #ClusterData/eu_natura_all_RESULTS
-root_path = "C:/Users/mhartman/PycharmProjects/ClusterData"
-# root_path = "C:/Users/mhartman/PycharmProjects/MotiveDetection"
-def plot_shp(path="C:/Users/mhartman/Documents/100mDataset/argis_database/loewendenkmal.shp"):
-    map = gpd.read_file(path)
-    fig, ax = plt.subplots(figsize=(15, 15))
-    map.plot(ax=ax)
-    plt.show()
-
-def shp_boundary(path="C:/Users/mhartman/Documents/100mDataset/argis_database/loewendenkmal.shp"):
-    map = gpd.read_file(path)
-    boundary = map.iloc[0].geometry
-    print(boundary)
+root_path = "C:/Users/<user>/PycharmProjects/ClusterData"
 
 def read_dfs():
     '''
