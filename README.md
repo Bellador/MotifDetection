@@ -6,7 +6,7 @@ Through social media induced tourism people are drawn to places that were previo
 ## Setup
 This pipeline uses spatial clustering (HDBSCAN) and computer vision image analysis (SIFT) to detect motifs in images.
 
-1. Initialise all required python packages by using the requirements.txt file to create an identical, compatible anaconda environemnt with the following command: ``conda create --name myenv --file requirements.txt``
+1. Initialise all required python packages by using the requirements.txt file to create an identical, compatible anaconda environemnt with the following command: ``conda create --name myenv --file requirements.txt`` (tested on a Windows 64bit machine) 
 2. Adjust the core parameters of main.py regarding:
   - Project description
   - SIFT configuration
