@@ -11,10 +11,29 @@ This pipeline uses spatial clustering (HDBSCAN) and computer vision image analys
   - Project description
   - SIFT configuration
   - HDBSCAN configuration
-  - Motif filtering settings
+  - Motif filtering settings (normally set to None to allow dynamic filtering on the entire output with 'geomap_filter_for_motifsize.py') 
   - data source (FlickrAPI, external database, local directory with .csv data files)
 3. Adjust db_querier.py which handles database handling and querying if a database shall be used as data storage for the pipeline
 4. Run main.py
 
-![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_map_w_legend.png)
+## Output
+For each new project a designated directory will be created which stores all the output produced by the pipeline. This output includes:
+  - .csv file containing original FlickrAPI data (if FlickrAPI was selected as data source)
+  - downloaded Flickr images (if FlickrAPI was selected as data source)
+  - Folder named 'cluster_hmtl_inspect' which holds html-files for each HDBSCAN cluster and the therein identified motifs. The filenames include the motif score which is a measure for motif quality as well as the used filter parameters. These filter parameters are also listed in the header of the html file itself along with the actual visual motif output.
+  - Folder named 'dataframe_pickles' which holds the entire pipeline calculation output for each HDBSCAN cluster. The dataframe encompasses all photo_ids of the contained images, their image similarity score matrix and their final motif cluster label. This data can used in subsequent processing steps to further filter and plot results!
+  
+## Further data processing
+We added a script called 'geomap_filter.py' to the repo which makes further processing of the created dataframe pickle output easy. The script allows to filter all HDBSCAN clusters for motifs with a given minimum size as well as a minimum amount of unique authors. Additionally, it outputs a .CSV file containing the motifs that meet the filter requirements together among others with the motigs mean coordinates. This enables convinient visualisation and plotting in any GIS.
+
+
+## Processed Results
+The following results were based on an individually updated version of the original Yahoo Flickr Creative Commons 100 Million Database (YFCC100m at https://multimediacommons.wordpress.com/yfcc100m-core-dataset/). The research area was set exclusively to the Nature 2000 protected areas of Europe (see https://ec.europa.eu/environment/nature/natura2000/index_en.htm).
+
+![alt text](https://github.com/Bellador/MotiveDetection/blob/master/map_v2.png)
 The map shows the spatial distribution and occurrence of the motifs by our processing pipeline in the Natura 2000 protected areas. In total 119 motifs were identified of which 68 are cultural motifs, 36 natual motifs and 15 false positive motifs. All displayed motifs contain a minimum of five images by a minimum of five unique authors. The data foundation for this map is the updated Yahoo Flickr Creative Commons 100 Million dataset. For visualisation purposes a sub sample of the 119 motifs are displayed with an image while indicating their motif type in color
+
+----------------
+
+![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure.png)
+Visual examples of an identified cultur and nature motif
