@@ -24,7 +24,10 @@ class ImageSimilarityAnalyser:
         self.data_dir = data_dir
         self.subset_df = subset_df
         self.project_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name)
-        self.images_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name, f'images_{self.project_name}')
+        if self.data_source == 2:
+            self.images_path = os.path.join("C:/Users/mhartman/PycharmProjects/FlickrFrame", self.project_name, f'images_{self.project_name}')
+        else:
+            self.images_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.project_name, f'images_{self.project_name}')
         self.algorithm = self.algorithm_params['algorithm']
         self.lowe_ratio = self.algorithm_params['lowe_ratio']
 
@@ -179,7 +182,6 @@ class ImageSimilarityAnalyser:
                 if img_id in needed_ids:
                     image_objects[img_id] = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
                     feature_dict[img_id] = {}
-
         #using existing data directory
         elif self.data_source == 3:
             needed_ids = self.subset_df.index.values
@@ -193,7 +195,6 @@ class ImageSimilarityAnalyser:
                     image_objects[img_id] = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
                     feature_dict[img_id] = {}
             print(f"Number of images to process: {len(needed_ids)}")
-
 
         return image_objects, feature_dict, nr_images
 
@@ -325,11 +326,6 @@ class ImageSimilarityAnalyser:
 
         print("Plotting...")
 
-        # if re.search(r'motive', self.workpath):
-        #     image_type = 'motive'
-        # elif re.search(r'noise', self.workpath):
-        #     image_type = 'noise'
-
         image_type = self.project_name
 
         columns = self.df.columns.values
@@ -351,7 +347,6 @@ class ImageSimilarityAnalyser:
                         matches = self.df.loc[index, column]
                         distances = [match.distance for match in matches][:top_matches]
                         distance_dict[index][column] = distances
-
         if plot:
             distance_of_first_kp = []
             for item in distance_dict:
@@ -411,9 +406,6 @@ class ImageSimilarityAnalyser:
             if the bars should be labeled
             with the exact values on top uncomment the code below
             '''
-            # for rect in bar:
-            #     height = rect.get_height()
-            #     ax.annotate('{}'.format(height), xy=(rect.get_x() + rect.get_width() / 2, height))
             ax.set_ylabel(f'summed up distance')
             ax.set_xlabel(f'top {top_matches} image comparison variations')
             ax.set_title(f'{self.algorithm}: total distance {image_type} images')
@@ -421,12 +413,8 @@ class ImageSimilarityAnalyser:
             ax.set_xticklabels(labels[:top_comparisons])
 
         elif score_plot:
-            # motive_filename = "similarity_matrix_motive_400_2019_07_05_ORB.pkl"
-            # noise_filename = "similarity_matrix_noise_400_2019_07_05_ORB.pkl"
             motive_filename = "similarity_matrix_motive_0.45_2019_07_05_SURF.pkl"
             noise_filename = "similarity_matrix_noise_0.45_2019_07_05_SURF.pkl"
-            # motive_filename = "similarity_matrix_motive_750_2019_07_05_SIFT.pkl"
-            # noise_filename = "similarity_matrix_noise_750_2019_07_05_SIFT.pkl"
             motive_df = pd.read_pickle(f"{path_pickle_similarity}{motive_filename}")
             motive_indexes = motive_df.index.values
             motive_columns = motive_df.columns.values
@@ -454,7 +442,6 @@ class ImageSimilarityAnalyser:
                     #include only positiv scores
                     if score != 0:
                         score_tuplelist_noise.append((index, column, score))
-
             #sort scores
             score_tuplelist_motive = sorted(score_tuplelist_motive, reverse=True, key=lambda x: x[2])
             score_tuplelist_noise = sorted(score_tuplelist_noise, reverse=True, key=lambda x: x[2])
@@ -511,7 +498,6 @@ class ImageSimilarityAnalyser:
         #then only this subsection of the dataframe will be reasigned to the original.
         #Testing what happens if no reasign but with inplace=True.
         #fillna() doesn't work as intendend as soon as one enters a list of rows AND columns
-
         '''
         isnull checks for NaN, None -> missing values. Zeros will NOT be removed!
         Only checks last column since that is enough, if the value is NaN its image does not exist

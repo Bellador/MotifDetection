@@ -8,7 +8,8 @@ import pandas as pd
 from random import uniform
 from statistics import mean
 
-root_path = "C:/Users/<user>/PycharmProjects/ClusterData"
+# root_path = "C:/Users/mhartman/PycharmProjects/ClusterData"
+root_path = "C:/Users/mhartman/PycharmProjects/MotifDetection"
 
 def read_dfs():
     '''
@@ -53,7 +54,7 @@ def gis_export(gdf_bucket, project_path, min_motifs=10, min_authors=1, max_overl
     motif_duplicates = 0
     processed_ids = []
     matches = 0
-    PATH = os.path.join(project_path, f'TESTgis_export_min_size_{min_motifs}_min_authors_{min_authors}.csv')
+    PATH = os.path.join(project_path, f'mont_saint_michel_gis_export_min_size_{min_motifs}_min_authors_{min_authors}.csv')
     with open(PATH, 'wt') as f:
         f.write("cluster_nr;motif_label;motif_score;motif_size;unique_authors;pickle_filename;html_filename;x;y\n")
     for filename, gdf in gdf_bucket.items():
@@ -136,4 +137,4 @@ def gis_export(gdf_bucket, project_path, min_motifs=10, min_authors=1, max_overl
     print(f"\nOutput file at: {PATH} \nEntries: {matches}")
 
 gdf_bucket, project_path = read_dfs()
-gis_export(gdf_bucket, project_path, min_motifs=10, min_authors=10)
+gis_export(gdf_bucket, project_path, min_motifs=3, min_authors=3)

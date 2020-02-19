@@ -7,7 +7,9 @@ Through social media induced tourism people are drawn to places that were previo
 This pipeline uses spatial clustering (HDBSCAN) and computer vision image analysis (SIFT) to detect motifs in images.
 
 1. Initialise all required python packages by using the requirements.txt file to create an identical, compatible anaconda environemnt with the following command: ``conda create --name myenv --file requirements.txt``
+1.1 Additionally, the github repo 'FlickrFrame' is required if one plans to query the FlickrAPI. `Git clone https://github.com/Bellador/FlickrFrame.git` and change line 13 in main.py to the path were FlickrFrame was cloned to locally.
 2. Adjust the core parameters of main.py regarding:
+  - All path parameters for API keys, database login, storage etc. Search for: <URL here> and enter the required paths manually
   - Project description
   - SIFT configuration
   - HDBSCAN configuration

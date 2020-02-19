@@ -127,7 +127,6 @@ class ClusterMaster:
                 self.df.loc[:, 'spatial_cluster_label'] = pd.Series(clusters_labels, index=self.df.index)
             else:
                 self.df.loc[:, 'multi_cluster_label'] = pd.Series(boolean_array_zero_vals, index=self.df.index)
-
                 # assumption that the cluster labels are still in the same order as the df -> proven true
                 index_c = 0
                 for i, v in self.df.iterrows():

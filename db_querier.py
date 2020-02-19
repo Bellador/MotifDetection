@@ -4,7 +4,7 @@ import os
 import sys
 
 class DbQuerier:
-    path_db_psw = "C:/Users/<user>/Documents/100mDataset/db_password.txt"
+    path_db_psw = "C:/Users/mhartman/Documents/100mDataset/db_password.txt"
 
     def __init__(self, query, project_name):
         self.query = query

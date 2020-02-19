@@ -10,7 +10,7 @@ import os
 import gc
 import sys
 #import Flickr Framework to query FlickrAPI and retreive images (available at: github.com/Bellador/FlickrFrame
-sys.path.insert(1, "C:/Users/<user>/PycharmProjects/FlickrFrame")
+sys.path.insert(1, "C:/Users/mhartman/PycharmProjects/FlickrFrame")
 from flickr_framework import FlickrFrame
 
 
@@ -263,16 +263,17 @@ def cluster_html_inspect(index, dataframe, cluster_params, image_params, cluster
 
             # append media objects to correct cluster
             for i, row in dataframe.iterrows():
-                image_url = row['download_url']
+                img_url = os.path.join("C:/Users/mhartman/PycharmProjects/FlickrFrame", project_name, f'images_{project_name}', str(i) + '.jpg').replace('\\', '/')
                 cluster_label = row['multi_cluster_label']
-                cluster_dict[cluster_label].append((i, image_url))
+                cluster_dict[cluster_label].append((i, img_url))
 
             for counter, (k, v) in enumerate(cluster_dict.items()):
                 f.write(f'<h2>Cluster {k}</h2>\n')
                 f.write(f'<ul>\n')
-                for id in v:
-                    img_path = os.path.join(project_path, f'images_{project_name}', str(id) + '.jpg').replace('\\', '/')
-                    f.write(f'<li><img src="{img_path}" alt="{id}", height="300", width="300"><h3>{id}</h3></li>\n')
+                for tuple_ in v:
+                    id_ = tuple_[0]
+                    img_url = tuple_[1]
+                    f.write(f'<li><img src="{img_url}" alt="{id_}", height="300", width="300"><h3>{id_}</h3></li>\n')
 
                 f.write(f'</ul>\n')
             f.write("</body>\n")
@@ -507,6 +508,7 @@ if __name__ == '__main__':
     bbox_small = ['9.414564,47.284421,9.415497,47.285627']
     bbox_big = ['9.313564,47.282421,9.415497,47.285627']
     bbox_bridge_scotland = ['-6.175232,57.289046,-6.171761,57.290533']
+    bbox_mont_saint_michel = ['-1.538429,48.611802,-1.486759,48.643004']
     '''
     Existing data directories    
     '''
@@ -552,7 +554,7 @@ if __name__ == '__main__':
 ##############################################################
 ####################ADJUST#PARAMETERS#########################
 ##############################################################
-    project_desc = 'ashness_rel_min_agreement_3_m_agreement_5_5'
+    project_desc = 'mont_saint_michel'
 
     project_name = f"""{project_desc}\
 _{cluster_params_HDBSCAN_spatial['min_cluster_size']}\
@@ -561,26 +563,26 @@ _threshold_{SIFT_params['network_threshold']}\
 _motifagreement_{SIFT_params['motif_agreement']}\
 _avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_threshold']}"""
 
-    data_source = 3 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
+    data_source = 2 #1 = PostGIS database; 2 = Flickr API; 3 = existing data directory
     if data_source == 1:
         db_query = ross_query
-        image_from = 'volume'
+        image_from = 'volume' #from image_storage volume
     elif data_source == 2:
-        flickr_bbox = bbox_wildkirchli
-        image_from = 'url'
+        flickr_bbox = bbox_mont_saint_michel
+        allowed_licenses = '1,2,3,4,5,6' #Creative Commons
+        image_from = 'url' #from external server that hosts images
     elif data_source == 3:
         data_dir = dir_ashness
-        image_from = 'path'
+        image_from = 'path' #images are in specific local path
     else:
         print("Invalid data_source")
         sys.exit(1)
-    #   options 'volume': from image_storage volume; 'url': from external server that hosts images; 'path': images are in specific local path
+
     filter_authors_switch = False
     filter_spatial_extend = False
     max_lng_extend = 0.05 #change / neglect when running on Cluster
     max_lat_extend = 0.05 #change / neglect when running on Cluster
     spatial_clustering_params = cluster_params_HDBSCAN_spatial
-    # multi_clustering_params = cluster_params_HDBSCAN_multi
     image_similarity_params = SIFT_params
     min_motives_per_cluster = None #None if this step shall be skipped
     ################################################################
@@ -606,7 +608,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_th
             to_dbquery = True
             data_path = None
             #check if metadatafile already exists
-            # r=root, d=directories, f = files
+            # r=root, d=directories, f=files
             try:
                 for r, d, f in os.walk(project_path):
                     for file in f:
@@ -628,7 +630,7 @@ _avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_th
             to_flickrquery = True
             data_path = None
             # check if metadatafile already exists
-            # r=root, d=directories, f = files
+            # r=root, d=directories, f=files
             try:
                 for r, d, f in os.walk(project_path):
                     for file in f:
@@ -643,9 +645,9 @@ _avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_th
 
             if to_flickrquery:
                 print("About to import data from Flickr API...")
-                flickrframe_obj = FlickrFrame(project_name, bbox=flickr_bbox, toget_images=True)
+                path_CREDENTIALS = "C:/Users/mhartman/PycharmProjects/MotifDetection/FLICKR_API_KEY.txt"
+                flickrframe_obj = FlickrFrame(project_name, path_CREDENTIALS, bbox=flickr_bbox, toget_images=True, allowed_licenses=allowed_licenses)
                 data_path = flickrframe_obj.flickrquerier_obj.csv_output_path
-
         #use data from existing directory with csv and images
         elif data_source == 3:
             csv_found = False
@@ -662,8 +664,6 @@ _avgmotifscore_{SIFT_params['avgmotif_score_multiplier']*SIFT_params['network_th
             print("Invalid data source")
             sys.exit(1)
 
-        #FOR ROSS QUERY TO STOP HERE - ONLY TO QUERY DB
-        # sys.exit(0)
         '''
         2. Set desired Cluster algorithm and its parameters
         choice between HDBSCAN and DBSCAN - set input dictionary as seen above
