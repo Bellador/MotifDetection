@@ -6,15 +6,16 @@ Through social media induced tourism people are drawn to places that were previo
 ## Setup
 This pipeline uses spatial clustering (HDBSCAN) and computer vision image analysis (SIFT) to detect motifs in images.
 
-1. Initialise all required python packages by using the requirements.txt file to create an identical, compatible anaconda environemnt with the following command: ``conda create --name myenv --file requirements.txt``
-1.1 Additionally, the github repo 'FlickrFrame' is required if one plans to query the FlickrAPI. `Git clone https://github.com/Bellador/FlickrFrame.git` and change line 13 in main.py to the path were FlickrFrame was cloned to locally.
+1. Initialise all required python packages by using the requirements.txt file to create an identical, compatible anaconda environemnt with the following command: `conda create --name myenv --file requirements.txt`
+1.1 Additionally, the github repo 'FlickrFrame' is required if one plans to query the FlickrAPI: 
+`git clone https://github.com/Bellador/FlickrFrame.git` and change line 13 in main.py to the path were FlickrFrame was cloned to locally.
 2. Adjust the core parameters of main.py regarding:
-  - All path parameters for API keys, database login, storage etc. Search for: <URL here> and enter the required paths manually
+  - All path parameters for API keys & secrets, database login, storage etc. Search for: 'URL here' and enter the required paths manually
   - Project description
   - SIFT configuration
   - HDBSCAN configuration
   - Motif filtering settings (normally set to None to allow dynamic filtering on the entire output with 'geomap_filter_for_motifsize.py') 
-  - data source (FlickrAPI, external database, local directory with .csv data files)
+  - data source (FlickrAPI, external (Postgresql) database, local directory with .csv data files)
 3. Adjust db_querier.py which handles database handling and querying if a database shall be used as data storage for the pipeline
 4. Run main.py
 
@@ -39,3 +40,12 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure.png)
 Visual examples of an identified cultur and nature motif
+
+----------------
+
+<p align="center">
+  <img src="https://github.com/Bellador/MotiveDetection/blob/master/le_mont_saint_michel_submap_newlegend2.png" title="class specific model precision">
+</p>
+The map shows the spatial distribution and occurrence of the motifs by our processing pipeline in the Natura 2000 protected areas. In total 119 motifs were identified of which 68 are cultural motifs, 36 natual motifs and 15 false positive motifs. 
+All displayed motifs contain a minimum of five images by a minimum of five unique authors. The data foundation for this map is the updated Yahoo Flickr Creative Commons 100 Million dataset. 
+For visualisation purposes a sub sample of the 119 motifs are displayed with an image while indicating their motif type in color
