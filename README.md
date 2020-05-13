@@ -38,7 +38,7 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 
 ----------------
 
-![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure.png)
+![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure_new_300dpi.jpg)
 Visual examples of an identified cultur and nature motif
 
 ----------------
