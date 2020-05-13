@@ -29,7 +29,6 @@ For each new project a designated directory will be created which stores all the
 ## Further data processing
 We added a script called 'geomap_filter.py' to the repo which makes further processing of the created dataframe pickle output easy. The script allows to filter all HDBSCAN clusters for motifs with a given minimum size as well as a minimum amount of unique authors. Additionally, it outputs a .CSV file containing the motifs that meet the filter requirements together among others with the motigs mean coordinates. This enables convinient visualisation and plotting in any GIS.
 
-
 ## Processed Results
 The following results were based on an individually updated version of the original Yahoo Flickr Creative Commons 100 Million Database (YFCC100m at https://multimediacommons.wordpress.com/yfcc100m-core-dataset/). The research area was set exclusively to the Nature 2000 protected areas of Europe (see https://ec.europa.eu/environment/nature/natura2000/index_en.htm).
 
@@ -39,13 +38,34 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 ----------------
 
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure_new_300dpi.jpg)
-Visual examples of an identified cultur and nature motif
+One example per motif class respectively of the 68 culture and 36 nature motifs that were found inside the Natura 2000 sites.
+*Image sources from left-to-right (Flickr username, Flickr image id, user license):
+*Le Mont-Saint-Michel
+*1. Pepe Martínez Cámara - 15286893684 [CC BY-NC-SA 2.0]
+*2. Pablo Garbarino - 15381699077 [CC BY-NC-ND 2.0]
+*3. marottef - 8845388500 [CC BY-NC 2.0]
+*4. Paolo Ramponi - 12415418924 - [CC BY-NC-SA 2.0]
+*Blue Grotto
+*1. Michael Holler - 19879729385 - [CC BY-NC 2.0]
+*2. Joris Gruber - 25475401601 - [CC BY-NC-ND 2.0]
+*3. Sin Amigos - 2963000725 - [CC BY 2.0]
+*4. Chris Jagers - 32406808006 - [CC BY-NC-ND 2.0]*
 
 ----------------
 
 <p align="center">
   <img src="https://github.com/Bellador/MotiveDetection/blob/master/le_mont_saint_michel_submap_newlegend2.png" title="class specific model precision">
 </p>
-The map shows the spatial distribution and occurrence of the motifs by our processing pipeline in the Natura 2000 protected areas. In total 119 motifs were identified of which 68 are cultural motifs, 36 natual motifs and 15 false positive motifs. 
-All displayed motifs contain a minimum of five images by a minimum of five unique authors. The data foundation for this map is the updated Yahoo Flickr Creative Commons 100 Million dataset. 
-For visualisation purposes a sub sample of the 119 motifs are displayed with an image while indicating their motif type in color
+The map shows the spatial distribution and occurrence of the motifs by our processing pipelinein the Natura 2000 protected areas.  In total 119 motifs were identified of which 68 are culturalmotifs, 36 natural motifs and 15 false positive motifs.  All displayed motifs contain a minimum offive images by a minimum of five unique authors.  The data foundation for this map is theupdated Yahoo Flickr Creative Commons 100 Million dataset.  For visualisation purposes a subsample of the 119 motifs is displayed with an image while indicating their motif type in color.
+*Image sources:  (place name, flickr username, flickr image id, user license)Le Mont-Saint-Michel:  
+*Pepe Mart ́ınez C ́amara - 15286893754 - [CC BY-NC-SA 2.0]
+*Durdle Door:  KC2000 - 3620585132 - [CC BY-NC-ND 2.0]
+*Cliffs of Moher:  gnu1742 - 6580681781 - [CC BY-NC-SA 2.0]
+*Kylemore Abbey:  Johnny Graber - 15730653587 - [CC BY-NC-SA 2.0]
+*Forth Bridge:  bryan...  - 26331288697 - [CC BY-SA 2.0]
+*Predjamski Grad:  Tom - 14889396090 - [CC BY-ND 2.0]
+*Skradinski Buk:  Igor Gushchin - 37953928496 - [CC BY 2.0]
+*Kap Sounion:  Marc - 4835837372 - [CC BY-NC-ND 2.0]
+*Blue Grotto:  Michael Holler - 19879729385 - [CC BY-NC 2.0]
+*Schloss Neuschwanstein:  Jiuguang Wang - 5134934131 - [CC BY-SA 2.0]
+*Ponta de S ̃ao Louren ̧co:  ERREACHE - 48587252767 - [CC BY-NC-ND 2.0
