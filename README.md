@@ -34,6 +34,7 @@ The following results were based on an individually updated version of the origi
 
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/map_v2.png)
 The map shows the spatial distribution and occurrence of the motifs by our processing pipelinein the Natura 2000 protected areas.  In total 119 motifs were identified of which 68 are culturalmotifs, 36 natural motifs and 15 false positive motifs.  All displayed motifs contain a minimum offive images by a minimum of five unique authors.  The data foundation for this map is theupdated Yahoo Flickr Creative Commons 100 Million dataset. For visualisation purposes a subsample of the 119 motifs is displayed with an image while indicating their motif type in color.
+
 *Image sources:  (place name, flickr username, flickr image id, user license)*
 *Le Mont-Saint-Michel: Pepe Martınez Camara - 15286893754 - [CC BY-NC-SA 2.0]*
 *Durdle Door:  KC2000 - 3620585132 - [CC BY-NC-ND 2.0]*
