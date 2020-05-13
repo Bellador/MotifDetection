@@ -64,25 +64,25 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/motif_type_figure_new_300dpi.jpg)
 One example per motif class respectively of the 68 culture and 36 nature motifs that were found inside the Natura 2000 sites.
 
-*Image sources from left-to-right (Flickr username, Flickr image id, user license):
+*Image sources from left-to-right (Flickr username, Flickr image id, user license):*
 
-*Le Mont-Saint-Michel
+*Le Mont-Saint-Michel*
 
-*1. Pepe Martínez Cámara - 15286893684 [CC BY-NC-SA 2.0]
+*1. Pepe Martínez Cámara - 15286893684 [CC BY-NC-SA 2.0]*
 
-*2. Pablo Garbarino - 15381699077 [CC BY-NC-ND 2.0]
+*2. Pablo Garbarino - 15381699077 [CC BY-NC-ND 2.0]*
 
-*3. marottef - 8845388500 [CC BY-NC 2.0]
+*3. marottef - 8845388500 [CC BY-NC 2.0]*
 
-*4. Paolo Ramponi - 12415418924 - [CC BY-NC-SA 2.0]
+*4. Paolo Ramponi - 12415418924 - [CC BY-NC-SA 2.0]*
 
-*Blue Grotto
+*Blue Grotto*
 
-*1. Michael Holler - 19879729385 - [CC BY-NC 2.0]
+*1. Michael Holler - 19879729385 - [CC BY-NC 2.0]*
 
-*2. Joris Gruber - 25475401601 - [CC BY-NC-ND 2.0]
+*2. Joris Gruber - 25475401601 - [CC BY-NC-ND 2.0]*
 
-*3. Sin Amigos - 2963000725 - [CC BY 2.0]
+*3. Sin Amigos - 2963000725 - [CC BY 2.0]*
 
 *4. Chris Jagers - 32406808006 - [CC BY-NC-ND 2.0]*
 
