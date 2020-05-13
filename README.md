@@ -33,7 +33,7 @@ We added a script called 'geomap_filter.py' to the repo which makes further proc
 The following results were based on an individually updated version of the original Yahoo Flickr Creative Commons 100 Million Database (YFCC100m at https://multimediacommons.wordpress.com/yfcc100m-core-dataset/). The research area was set exclusively to the Nature 2000 protected areas of Europe (see https://ec.europa.eu/environment/nature/natura2000/index_en.htm).
 
 ![alt text](https://github.com/Bellador/MotiveDetection/blob/master/map_v2.png)
-The map shows the spatial distribution and occurrence of the motifs by our processing pipelinein the Natura 2000 protected areas.  In total 119 motifs were identified of which 68 are culturalmotifs, 36 natural motifs and 15 false positive motifs.  All displayed motifs contain a minimum offive images by a minimum of five unique authors.  The data foundation for this map is theupdated Yahoo Flickr Creative Commons 100 Million dataset. For visualisation purposes a subsample of the 119 motifs is displayed with an image while indicating their motif type in color.
+The map shows the spatial distribution and occurrence of the motifs by our processing pipeline in the Natura 2000 protected areas. In total 119 motifs were identified of which 68 are cultural motifs, 36 natural motifs and 15 false positive motifs. All displayed motifs contain a minimum of five images by a minimum of five unique authors. The data foundation for this map is the updated Yahoo Flickr Creative Commons 100 Million dataset. For visualisation purposes a subsample of the 119 motifs is displayed with an image while indicating their motif type in color.
 
 *Image sources:  (place name, flickr username, flickr image id, user license)*
 
@@ -91,5 +91,5 @@ One example per motif class respectively of the 68 culture and 36 nature motifs 
 <p align="center">
   <img src="https://github.com/Bellador/MotiveDetection/blob/master/le_mont_saint_michel_submap_newlegend2.png" title="class specific model precision">
 </p>
-We identified two motifs of Le Mont-Saint-Michel based on Creative Commons Flickr imageswith a minimum of five unique authors and motif images.  The figure illustrates the spatialdistribution and proportion between the input data, the formed spatial clusters and finally theresulting motifs.
+We identified two motifs of Le Mont-Saint-Michel based on Creative Commons Flickr images with a minimum of five unique authors and motif images. The figure illustrates the spatial distribution and proportion between the input data, the formed spatial clusters and finally the resulting motifs.
 
