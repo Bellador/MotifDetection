@@ -38,15 +38,25 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 *Image sources:  (place name, flickr username, flickr image id, user license)*
 
 *Le Mont-Saint-Michel: Pepe Martınez Camara - 15286893754 - [CC BY-NC-SA 2.0]*
+
 *Durdle Door:  KC2000 - 3620585132 - [CC BY-NC-ND 2.0]*
+
 *Cliffs of Moher:  gnu1742 - 6580681781 - [CC BY-NC-SA 2.0]*
+
 *Kylemore Abbey:  Johnny Graber - 15730653587 - [CC BY-NC-SA 2.0]*
+
 *Forth Bridge:  bryan...  - 26331288697 - [CC BY-SA 2.0]*
+
 *Predjamski Grad:  Tom - 14889396090 - [CC BY-ND 2.0]*
+
 *Skradinski Buk:  Igor Gushchin - 37953928496 - [CC BY 2.0]*
+
 *Kap Sounion:  Marc - 4835837372 - [CC BY-NC-ND 2.0]*
+
 *Blue Grotto:  Michael Holler - 19879729385 - [CC BY-NC 2.0]*
+
 *Schloss Neuschwanstein:  Jiuguang Wang - 5134934131 - [CC BY-SA 2.0]*
+
 *Ponta de S ̃ao Louren ̧co:  ERREACHE - 48587252767 - [CC BY-NC-ND 2.0]*
 
 ----------------
@@ -59,15 +69,21 @@ One example per motif class respectively of the 68 culture and 36 nature motifs 
 *Le Mont-Saint-Michel*
 
 *1. Pepe Martínez Cámara - 15286893684 [CC BY-NC-SA 2.0]*
+
 *2. Pablo Garbarino - 15381699077 [CC BY-NC-ND 2.0]*
+
 *3. marottef - 8845388500 [CC BY-NC 2.0]*
+
 *4. Paolo Ramponi - 12415418924 - [CC BY-NC-SA 2.0]*
 
 *Blue Grotto*
 
 *1. Michael Holler - 19879729385 - [CC BY-NC 2.0]*
+
 *2. Joris Gruber - 25475401601 - [CC BY-NC-ND 2.0]*
+
 *3. Sin Amigos - 2963000725 - [CC BY 2.0]*
+
 *4. Chris Jagers - 32406808006 - [CC BY-NC-ND 2.0]*
 
 ----------------
