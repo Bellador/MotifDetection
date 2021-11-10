@@ -1,7 +1,7 @@
 # Motif Detection
 
 ## Introduction
-Through social media induced tourism people are drawn to places that were previously not experiencing much touristic attentation. Drastic and rapid changes in a location's popularity can have serious effects on the local population, the infrastructure and, last but not least on the environment. Therefore, the monitoring and analysis of social media induced tourism is more important than ever before to ensure local agencies to act in time and occurding to the observed circumstances. Locations that experienced strong attention on social media such as Instagram where shown to be characterised by distinct, reoccuring motif images. We regard motifs as a collection of images which depict the same landscape element(s) from a similar viewpoint. Therefore, the scenic focus, angle and position of the observer are important criteria to decide if two images belong to the same motif or not. This implies that images which show the same landscape element(s) are not automatically considered a motif. These motifs are hypothesised to function as proxy to indicate the locations of exsiting or upcoming social media induced tourism hot spots. We were able to confirm in a casestuy that motif locations pinpoint to more specific and concrete spots inside already popular places that are expossed to additional visitation strain. Therefore, a more granular spatial resolution in regards to popular locations was achieved. Also a temporal analysis of motif development was conducted which did not significantly show the expected exponential increase after a certain trigger event occured. This is up to further investigation.
+Visiting landscapes and appreciating them from specific viewpoints is not a new phenomenon. Such so-called motifs were popularised by travel guides and art in the romantic era, and find their contemporary digital twins through images captured in social media. We developed and implemented a conceptual model of motifs, based around spatial clustering, image similarity and the appreciation of a motif by multiple individuals. We identified 119 motifs across Europe, using 2’146’176 georeferenced Creative Commons Flickr images found in Natura 2000 designated areas. About 65\% of motifs contain cultural elements such as castles or bridges. The remaining 35\% are natural features, and biased towards coastal elements such as cliffs. Characterisation and localisation of motifs could allow identification of locations subject to increased pressure, and thus disturbance, especially since the visual characteristics of motifs allow managers to explore why sites are being visited. Future work will include methods of calculating image similarity using tags, explore different algorithms for assessing content similarity and study the behaviour of motifs through time.
 
 ## Setup
 This pipeline uses spatial clustering (HDBSCAN) and computer vision image analysis (SIFT) to detect motifs in images.
@@ -38,25 +38,15 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 *Image sources:  (place name, flickr username, flickr image id, user license)*
 
 *Le Mont-Saint-Michel: Pepe Martınez Camara - 15286893754 - [CC BY-NC-SA 2.0]*
-
 *Durdle Door:  KC2000 - 3620585132 - [CC BY-NC-ND 2.0]*
-
 *Cliffs of Moher:  gnu1742 - 6580681781 - [CC BY-NC-SA 2.0]*
-
 *Kylemore Abbey:  Johnny Graber - 15730653587 - [CC BY-NC-SA 2.0]*
-
 *Forth Bridge:  bryan...  - 26331288697 - [CC BY-SA 2.0]*
-
 *Predjamski Grad:  Tom - 14889396090 - [CC BY-ND 2.0]*
-
 *Skradinski Buk:  Igor Gushchin - 37953928496 - [CC BY 2.0]*
-
 *Kap Sounion:  Marc - 4835837372 - [CC BY-NC-ND 2.0]*
-
 *Blue Grotto:  Michael Holler - 19879729385 - [CC BY-NC 2.0]*
-
 *Schloss Neuschwanstein:  Jiuguang Wang - 5134934131 - [CC BY-SA 2.0]*
-
 *Ponta de S ̃ao Louren ̧co:  ERREACHE - 48587252767 - [CC BY-NC-ND 2.0]*
 
 ----------------
@@ -69,21 +59,15 @@ One example per motif class respectively of the 68 culture and 36 nature motifs 
 *Le Mont-Saint-Michel*
 
 *1. Pepe Martínez Cámara - 15286893684 [CC BY-NC-SA 2.0]*
-
 *2. Pablo Garbarino - 15381699077 [CC BY-NC-ND 2.0]*
-
 *3. marottef - 8845388500 [CC BY-NC 2.0]*
-
 *4. Paolo Ramponi - 12415418924 - [CC BY-NC-SA 2.0]*
 
 *Blue Grotto*
 
 *1. Michael Holler - 19879729385 - [CC BY-NC 2.0]*
-
 *2. Joris Gruber - 25475401601 - [CC BY-NC-ND 2.0]*
-
 *3. Sin Amigos - 2963000725 - [CC BY 2.0]*
-
 *4. Chris Jagers - 32406808006 - [CC BY-NC-ND 2.0]*
 
 ----------------
@@ -92,4 +76,3 @@ One example per motif class respectively of the 68 culture and 36 nature motifs 
   <img src="https://github.com/Bellador/MotiveDetection/blob/master/le_mont_saint_michel_submap_newlegend2.png" title="class specific model precision">
 </p>
 We identified two motifs of Le Mont-Saint-Michel based on Creative Commons Flickr images with a minimum of five unique authors and motif images. The figure illustrates the spatial distribution and proportion between the input data, the formed spatial clusters and finally the resulting motifs.
-
