@@ -84,13 +84,15 @@ The map shows the spatial distribution and occurrence of the motifs by our proce
 ![motif_types](motif_type_figure.png)
 Visual examples of an identified culture and nature motif
 
+*Image sources:  (place name, flickr username, flickr image id, user license)*
+
 *Le Mont-Saint-Michel*
 
-*1. Pepe Martínez Cámara - 15286893684 [CC BY-NC-SA 2.0]*
+*1. Pepe Martínez Cámara - 15286893684 - [CC BY-NC-SA 2.0]*
 
-*2. Pablo Garbarino - 15381699077 [CC BY-NC-ND 2.0]*
+*2. Pablo Garbarino - 15381699077 - [CC BY-NC-ND 2.0]*
 
-*3. marottef - 8845388500 [CC BY-NC 2.0]*
+*3. marottef - 8845388500 - [CC BY-NC 2.0]*
 
 *4. Paolo Ramponi - 12415418924 - [CC BY-NC-SA 2.0]*
 
